@@ -42,38 +42,45 @@ end
 ---@param dt number
 function LiveShader:update(dt)
 	local info = love.filesystem.getInfo(self._shader_path)
-	if info and info.modtime > self._last_modified then
+	if not info then
+		return
+	end
+
+	if info.modtime > self._last_modified then
 		self._last_modified = info.modtime -- stops this block from executing till next modification
 		self._pending_reload = true
 		self._reload_timer = 0
 	end
 
-	if self._pending_reload then
-		self._reload_timer = self._reload_timer + dt
+	if not self._pending_reload then
+		return
+	end
 
-		if self._reload_timer >= self._reload_delay then
-			local code = safe_read(self._shader_path)
+	self._reload_timer = self._reload_timer + dt
 
-			if code then
-				local ok, s = pcall(love.graphics.newShader, code)
+	if self._reload_timer < self._reload_delay then
+		return
+	end
 
-				-- compilation goes well
-				if ok then
-					self._shader = s
-					print("shader reloaded at", os.date("%H:%M:%S"))
-				--compilation goes wrong
-				else
-					-- set the current shader nil
-					-- TODO: show error on screen?
-					self._shader = nil
-					print("shader compile error:\n", s)
-				end
-			else
-				-- skip temporary missing files
-				return
-			end
-			self._pending_reload = false
-		end
+	local code = safe_read(self._shader_path)
+
+	self._pending_reload = false
+	if not code then
+		return
+	end
+
+	local ok, s = pcall(love.graphics.newShader, code)
+
+	-- compilation goes well
+	if ok then
+		self._shader = s
+		print("shader reloaded at", os.date("%H:%M:%S"))
+		--compilation goes wrong
+	else
+		-- set the current shader nil
+		-- TODO: show error on screen?
+		self._shader = nil
+		print("shader compile error:\n", s)
 	end
 end
 
@@ -112,6 +119,11 @@ function LiveShader:use()
 	else
 		love.graphics.setShader()
 	end
+end
+
+---@return boolean
+function LiveShader:loaded()
+	return self._shader ~= nil
 end
 
 return LiveShader

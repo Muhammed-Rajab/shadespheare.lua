@@ -7,7 +7,7 @@ vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 sc) {
     float AR = iResolution.x / iResolution.y;
     uv *= vec2(AR, -1);
     uv *= sin(iTime);
-    uv *= cos(iTime);
+    uv *= tan(iTime);
 
     return vec4(uv, 0.0, 1.0 );
 }

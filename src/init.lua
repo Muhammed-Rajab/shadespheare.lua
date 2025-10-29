@@ -10,36 +10,52 @@ local fontman = require("src.fontmanager")
 
 local shader
 local shader_path = "shader.glsl"
+
 local last_modified = 0
 
-local reloadDelay = 0.5
+local reloadDelay = 0.25
+local pendingReload = false
 local timeSinceChange = 0
+local reloadTimer = 0
+
+local function safeRead(path)
+	local ok, data = pcall(love.filesystem.read, path)
+	if ok and data then
+		return data
+	else
+		return nil
+	end
+end
 
 local function loadShader(dt)
 	local info = love.filesystem.getInfo(shader_path)
-	if not info then
-		print("shader file not found:", shader_path)
-		return
-	end
-
-	if info.modtime > last_modified then
-		timeSinceChange = 0
+	if info and info.modtime > last_modified then
+		-- file changed
 		last_modified = info.modtime
+		pendingReload = true
+		reloadTimer = 0
 	end
 
-	timeSinceChange = timeSinceChange + dt
-
-	if timeSinceChange >= reloadDelay then
-		local code = love.filesystem.read(shader_path)
-		local ok, s = pcall(love.graphics.newShader, code)
-		if ok then
-			shader = s
-			print("shader reloaded at", os.date("%H:%M:%S"))
-		else
-			print("shader compile error:\n", s)
+	if pendingReload then
+		reloadTimer = reloadTimer + dt
+		if reloadTimer >= reloadDelay then
+			local code = safeRead(shader_path)
+			if code then
+				local ok, s = pcall(love.graphics.newShader, code)
+				if ok then
+					shader = s
+					print("shader reloaded at", os.date("%H:%M:%S"))
+				else
+					-- maybe set the shader to nil, so shit won't get executed?
+					shader = nil
+					print("shader compile error:\n", s)
+				end
+			else
+				-- skip temporary missing files
+				return
+			end
+			pendingReload = false
 		end
-
-		timeSinceChange = -math.huge
 	end
 end
 

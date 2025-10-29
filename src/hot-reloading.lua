@@ -106,4 +106,12 @@ function LiveShader:set_uniform(name, value)
 	return true
 end
 
+function LiveShader:use()
+	if self._shader then
+		love.graphics.setShader(self._shader)
+	else
+		love.graphics.setShader()
+	end
+end
+
 return LiveShader

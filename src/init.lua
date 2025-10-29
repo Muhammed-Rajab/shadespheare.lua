@@ -35,10 +35,16 @@ end
 function love.update(dt)
 	shader:update(dt)
 
-	shader:set_uniform("iTime", love.timer.getTime())
+	local ok, err = shader:set_uniform("iTime", love.timer.getTime())
+	if not ok then
+		print(err)
+	end
 
 	local width, height = love.graphics.getDimensions()
-	shader:set_uniform("iResolution", { width, height })
+	ok, err = shader:set_uniform("iResolution", { width, height })
+	if not ok then
+		print(err)
+	end
 end
 
 function love.draw()

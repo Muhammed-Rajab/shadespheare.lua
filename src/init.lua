@@ -35,6 +35,10 @@ end
 function love.update(dt)
 	shader:update(dt)
 
+	if not shader:loaded() then
+		return
+	end
+
 	local ok, err = shader:set_uniform("iTime", love.timer.getTime())
 	if not ok then
 		print(err)
@@ -58,5 +62,5 @@ function love.draw()
 		love.graphics.setShader()
 	end
 
-	love.graphics.print("FPS: " .. love.timer.getFPS(), 10, 10)
+	-- love.graphics.print("FPS: " .. love.timer.getFPS(), 10, 10)
 end

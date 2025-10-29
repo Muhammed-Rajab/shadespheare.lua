@@ -12,16 +12,24 @@ local shader
 local shader_path = "shader.glsl"
 local last_modified = 0
 
-local function loadShader()
+local reloadDelay = 0.5
+local timeSinceChange = 0
+
+local function loadShader(dt)
 	local info = love.filesystem.getInfo(shader_path)
 	if not info then
 		print("shader file not found:", shader_path)
 		return
 	end
 
-	-- reload if changed
 	if info.modtime > last_modified then
+		timeSinceChange = 0
 		last_modified = info.modtime
+	end
+
+	timeSinceChange = timeSinceChange + dt
+
+	if timeSinceChange >= reloadDelay then
 		local code = love.filesystem.read(shader_path)
 		local ok, s = pcall(love.graphics.newShader, code)
 		if ok then
@@ -30,6 +38,8 @@ local function loadShader()
 		else
 			print("shader compile error:\n", s)
 		end
+
+		timeSinceChange = -math.huge
 	end
 end
 
@@ -50,25 +60,23 @@ function love.load()
 	utils.loadDefaultFonts()
 
 	-- load inital shader
-	loadShader()
+	loadShader(0)
+end
+
+local function sendUniform(shader, name, value)
+	if shader:hasUniform(name) then
+		shader:send(name, value)
+	end
 end
 
 function love.update(dt)
-	-----------------------------------
-	-- your updation logic goes here --
-	-----------------------------------
-	loadShader()
+	loadShader(dt)
 
 	if shader then
-		-- pass data to shader
-		if shader:hasUniform("iTime") then
-			shader:send("iTime", love.timer.getTime())
-		end
+		sendUniform(shader, "iTime", love.timer.getTime())
 
-		if shader:hasUniform("iResolution") then
-			local width, height = love.graphics.getDimensions()
-			shader:send("iResolution", { width, height })
-		end
+		local width, height = love.graphics.getDimensions()
+		sendUniform(shader, "iResolution", { width, height })
 	end
 end
 

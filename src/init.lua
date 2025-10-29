@@ -15,7 +15,6 @@ local last_modified = 0
 
 local reloadDelay = 0.25
 local pendingReload = false
-local timeSinceChange = 0
 local reloadTimer = 0
 
 local function safeRead(path)
@@ -31,7 +30,7 @@ local function loadShader(dt)
 	local info = love.filesystem.getInfo(shader_path)
 	if info and info.modtime > last_modified then
 		-- file changed
-		last_modified = info.modtime
+		last_modified = info.modtime -- important line
 		pendingReload = true
 		reloadTimer = 0
 	end

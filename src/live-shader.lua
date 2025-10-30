@@ -39,7 +39,7 @@ local function get_mod_time(path)
 		-- Use system stat command (no lfs required)
 		local ok, modtime = pcall(function()
 			local quoted = string.format("%q", path) -- safely quoted for shell
-			local pipe = io.popen('stat -c %Y "' .. quoted .. '" 2>/dev/null')
+			local pipe = io.popen("stat -c %Y " .. quoted .. " 2>/dev/null")
 			if not pipe then
 				return nil
 			end

@@ -1,5 +1,5 @@
----reads a file and returns. returns `nil` if there's any error.
----@param path string
+---safely reads a file and returns. returns `nil` if there's any error.
+---@param path string path to file to read
 ---@return any
 local function safe_read(path)
 	local ok, data = pcall(love.filesystem.read, path)
@@ -11,8 +11,8 @@ local function safe_read(path)
 end
 
 ---format compile errors
----@param text string input error string
----@param prefix string the prefix to add
+---@param text    string input error string
+---@param prefix  string the prefix to add
 ---@return string
 local function format_compile_errors(text, prefix)
 	local result = {}
@@ -34,19 +34,19 @@ end
 ---reloads it after a short delay when modifications are detected. Very useful
 ---for rapid shader iteration and debugging without restarting the application.
 ---@class LiveShader
----@field _shader           any
----@field _shader_path      string
----@field _last_modified    number
----@field _reload_delay     number
----@field _pending_reload   boolean
----@field _reload_timer     number
----@field _compile_error    string
+---@field _shader           any     LÖVE2D shader
+---@field _shader_path      string  path to the shader
+---@field _last_modified    number  timestamp of when the shader was last modified
+---@field _reload_delay     number  delay before recompiling the shader
+---@field _pending_reload   boolean whether a reload is pending
+---@field _reload_timer     number  keeps track of time before reloading
+---@field _compile_error    string  errors that occured while compilation
 local LiveShader = {}
 
 LiveShader.__index = LiveShader
 
 ---create a new live shader from `path` and reload only `reload_delay` seconds after change in shader.
----@param path string
+---@param path          string
 ---@param reload_delay? number
 ---@return LiveShader
 function LiveShader.new(path, reload_delay)
@@ -60,7 +60,6 @@ function LiveShader.new(path, reload_delay)
 		_reload_timer = 0,
 		_reload_delay = reload_delay or 0.25,
 
-		---keeps track of compile errors
 		_compile_error = nil,
 	}
 
@@ -99,6 +98,7 @@ function LiveShader:update(dt)
 		return
 	end
 
+	---@type boolean, string | love.Shader
 	local ok, s = pcall(love.graphics.newShader, code)
 
 	local _time_prefix = "[" .. os.date("%H:%M:%S") .. "] "
@@ -108,7 +108,9 @@ function LiveShader:update(dt)
 		print(_time_prefix .. "✅ shader reloaded: " .. self._shader_path)
 		print((" "):rep(#_time_prefix) .. "\27[32mno compilation errors 👍\27[0m")
 		self._compile_error = nil
-	else
+
+	--- NOTE: this string is added to avoid warnings from the LSP. this makes sure that 's' is an error string
+	elseif type(s) == "string" then
 		self._shader = nil
 
 		local _err_msg_header = _time_prefix .. "❌ shader compilation failed: " .. self._shader_path .. "\n"
@@ -138,7 +140,7 @@ function LiveShader:has_uniform(name)
 end
 
 ---set a value for a given uniform in the shader
----@param name string
+---@param name  string
 ---@param value any
 function LiveShader:set_uniform(name, value)
 	if not self._shader then

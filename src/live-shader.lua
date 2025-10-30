@@ -10,6 +10,24 @@ local function safe_read(path)
 	end
 end
 
+---format compile errors
+---@param text string input error string
+---@param prefix string the prefix to add
+---@return string
+local function format_compile_errors(text, prefix)
+	local result = {}
+
+	-- Split by newline and process each line
+	for line in text:gmatch("([^\n]*)\n?") do
+		if line ~= "" then
+			table.insert(result, prefix .. line .. "\n")
+		end
+	end
+
+	-- Concatenate back with newlines
+	return table.concat(result)
+end
+
 ---Represents a shader that supports live reloading during runtime.
 ---
 ---The **LiveShader** class monitors a shader file for changes and automatically
@@ -83,15 +101,29 @@ function LiveShader:update(dt)
 
 	local ok, s = pcall(love.graphics.newShader, code)
 
+	local _time_prefix = "[" .. os.date("%H:%M:%S") .. "] "
+
 	if ok then
 		self._shader = s
-		print("shader reloaded at", os.date("%H:%M:%S"))
+		print(_time_prefix .. "✅ shader reloaded: " .. self._shader_path)
+		print((" "):rep(#_time_prefix) .. "\27[32mno compilation errors 👍\27[0m")
 		self._compile_error = nil
 	else
 		self._shader = nil
-		local err_msg = "shader compile error:\n" .. s
-		print(err_msg)
-		self._compile_error = err_msg
+
+		local _err_msg_header = _time_prefix .. "❌ shader compilation failed: " .. self._shader_path .. "\n"
+
+		local _err_msg_cli = _err_msg_header
+			.. (" "):rep(#_time_prefix)
+			.. "\27[31m"
+			.. "compile error: \n"
+			.. format_compile_errors(s, (" "):rep(#_time_prefix))
+			.. "\27[0m"
+		io.write(_err_msg_cli)
+
+		local _err_msg_screen = _err_msg_header .. s
+
+		self._compile_error = _err_msg_screen
 	end
 end
 

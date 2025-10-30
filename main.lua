@@ -39,8 +39,13 @@ vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 sc) {
 	print("🆕 Created shader file: " .. args.shader)
 	love.event.quit()
 elseif args.watch then
+	print("shader is" .. args.shader)
+	require("src.init")(args.shader, true)
 elseif args.run then
+	require("src.init")(args.shader, false)
+else
+	parser:print_help()
+	love.event.quit()
 end
 
 -- main.lua
-require("src.init")

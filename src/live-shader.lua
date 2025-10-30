@@ -98,6 +98,7 @@ end
 ---@field _pending_reload   boolean whether a reload is pending
 ---@field _reload_timer     number  keeps track of time before reloading
 ---@field _compile_error    string  errors that occured while compilation
+---@field _watch_enabled    boolean  whether watching is enabled
 local LiveShader = {}
 
 LiveShader.__index = LiveShader
@@ -118,15 +119,23 @@ function LiveShader.new(path, reload_delay)
 		_reload_delay = reload_delay or 0.25,
 
 		_compile_error = nil,
+		_watch_enabled = true,
 	}
 
 	setmetatable(obj, LiveShader)
+
+	---prints the current watch state to console
+	obj:set_watch(true)
 	return obj
 end
 
 ---check for changes in the shader file and recompile if there's any.
 ---@param dt number
 function LiveShader:update(dt)
+	if not self._watch_enabled then
+		return
+	end
+
 	local modtime = get_mod_time(self._shader_path)
 	if not modtime then
 		return
@@ -242,6 +251,20 @@ end
 ---@return boolean
 function LiveShader:loaded()
 	return self._shader ~= nil
+end
+
+---set the live shader to watch for changes
+---@param enabled boolean
+function LiveShader:set_watch(enabled)
+	self._watch_enabled = enabled
+	local state = enabled and "enabled ✅" or "disabled ⛔"
+	print(string.format("[%s] live shader watch %s", os.date("%H:%M:%S"), state))
+end
+
+---returns whether the live shader is watching
+---@return boolean
+function LiveShader:is_watching()
+	return self._watch_enabled
 end
 
 return LiveShader

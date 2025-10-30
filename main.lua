@@ -48,10 +48,10 @@ vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 sc) {
 	print(("[%s] 🆕 created shader file: %s"):format(os.date("%H:%M:%S"), args.shader))
 elseif args.watch then
 	print(("[%s] 👀 watching %s (reload delay %.2fs)"):format(os.date("%H:%M:%S"), args.shader, args.delay))
-	app.Initialize(args.shader, true, args.delay)
+	app.initialize(args.shader, true, args.delay)
 elseif args.run then
 	print(("[%s] 🏃 running %s"):format(os.date("%H:%M:%S"), args.shader))
-	app.Initialize(args.shader, false, 0.25)
+	app.initialize(args.shader, false, 0.25)
 else
 	parser:print_help()
 

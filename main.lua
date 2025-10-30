@@ -1,2 +1,46 @@
+local argparse = require("lib.argparse")
+
+---removes '.' from arg
+table.remove(arg, 1)
+
+local parser = argparse("shadespheare", "live GLSL shader preview")
+
+parser:flag("-v --verbose", "enable verbose output")
+parser:flag("-h --help", "shows this help message and exit")
+
+local run_cmd = parser:command("run", "run a shader in a LÖVE2D window")
+run_cmd:argument("shader", "path to shader file"):args(1)
+run_cmd:option("--delay", "shader reload delay in seconds", "0.25"):convert(tonumber)
+
+local new_cmd = parser:command("new", "create a new shader project")
+new_cmd:argument("shader", "path to new shader project")
+
+local watch_cmd = parser:command("watch", "continuously re-run the shader when the file changes")
+watch_cmd:argument("shader", "path to shader file"):args(1)
+watch_cmd:option("--delay", "shader reload delay", "0.25"):convert(tonumber)
+
+local args = parser:parse()
+
+---handle the cli
+if args.new then
+	local template = [[
+uniform float iTime;
+uniform vec2 iResolution;
+
+vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 sc) {
+	vec2 uv = (sc / iResolution) * 2.0 - 1.0;
+	vec3 col = vec3(uv.x, sin(iTime), uv.y);
+	return vec4(col, 1.0);
+}
+]]
+	local f = io.open(args.shader, "w")
+	f:write(template)
+	f:close()
+	print("🆕 Created shader file: " .. args.shader)
+	love.event.quit()
+elseif args.watch then
+elseif args.run then
+end
+
 -- main.lua
 require("src.init")

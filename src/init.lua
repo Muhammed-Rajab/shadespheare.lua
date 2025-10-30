@@ -7,7 +7,7 @@ I_SCALE = nil
 local settings = require("settings")
 local utils = require("src.utils")
 local fontman = require("src.fontmanager")
-local LiveShader = require("src.hot-reloading")
+local LiveShader = require("src.live-shader")
 
 local shader
 local shader_path = "shader.glsl"
@@ -22,12 +22,8 @@ function love.load()
 
 	love.window.setMode(WIDTH * SCALE, HEIGHT * SCALE)
 
-	--------------------------
-	-- your setup goes here --
-	--------------------------
-	-- WARN: loads JetBrainsMono fonts in different sizes. Can be EXPENSIVE
+	-- your setup
 	utils.loadDefaultFonts()
-
 	shader = LiveShader.new(shader_path, 0.25)
 	shader:update(0)
 end
@@ -53,6 +49,8 @@ end
 
 function love.draw()
 	-- WARN: scaling causes the font rendering to misbehave. use with caution.
+
+	love.graphics.push()
 	love.graphics.scale(SCALE, SCALE)
 	love.graphics.setBackgroundColor(0.08, 0.08, 0.08, 1)
 
@@ -61,6 +59,10 @@ function love.draw()
 		love.graphics.rectangle("fill", 0, 0, WIDTH, HEIGHT)
 		love.graphics.setShader()
 	end
+	love.graphics.pop()
 
-	-- love.graphics.print("FPS: " .. love.timer.getFPS(), 10, 10)
+	love.graphics.setColor(0, 0, 0, 255)
+	love.graphics.rectangle("fill", 7, 10, 157, 40)
+	love.graphics.setColor(0, 255, 0, 255)
+	love.graphics.print("FPS: " .. love.timer.getFPS(), 10, 10)
 end

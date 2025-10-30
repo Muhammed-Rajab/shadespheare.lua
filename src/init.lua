@@ -31,7 +31,6 @@ local function Init(shader_path, watch)
 
 		---setup
 		utils.loadDefaultFonts()
-		shader = LiveShader.new(shader_path, 0.25)
 
 		---initialize width and height
 		resolution.width, resolution.height = love.graphics.getDimensions()
@@ -40,10 +39,12 @@ local function Init(shader_path, watch)
 		mouse.x = resolution.width / 2
 		mouse.y = resolution.height / 2
 
-		---update uniforms initially
+		---load the shader and call update initially
+		shader = LiveShader.new(shader_path, 0.25)
 		shader:update(0)
 
-		print("shader loaded: ", shader:loaded())
+		---set watch state (default: true)
+		shader:set_watch(watch ~= false)
 	end
 
 	---update resolution when window size changes

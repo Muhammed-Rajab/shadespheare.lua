@@ -124,8 +124,6 @@ function LiveShader.new(path, reload_delay)
 
 	setmetatable(obj, LiveShader)
 
-	---prints the current watch state to console
-	obj:set_watch(true)
 	return obj
 end
 

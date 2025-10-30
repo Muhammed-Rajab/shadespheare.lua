@@ -91,14 +91,14 @@ end
 ---reloads it after a short delay when modifications are detected. Very useful
 ---for rapid shader iteration and debugging without restarting the application.
 ---@class LiveShader
----@field _shader           any     LÖVE2D shader
----@field _shader_path      string  path to the shader
----@field _last_modified    number  timestamp of when the shader was last modified
----@field _reload_delay     number  delay before recompiling the shader
----@field _pending_reload   boolean whether a reload is pending
----@field _reload_timer     number  keeps track of time before reloading
----@field _compile_error    string  errors that occured while compilation
----@field _watch_enabled    boolean  whether watching is enabled
+---@field _shader           any       LÖVE2D shader
+---@field _shader_path      string    path to the shader
+---@field _last_modified    number    timestamp of when the shader was last modified
+---@field _reload_delay     number    delay before recompiling the shader
+---@field _pending_reload   boolean   whether a reload is pending
+---@field _reload_timer     number    keeps track of time before reloading
+---@field _compile_error    string    errors that occured while compilation
+---@field _watch_enabled    boolean   whether watching is enabled
 local LiveShader = {}
 
 LiveShader.__index = LiveShader

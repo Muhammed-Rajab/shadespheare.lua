@@ -1,3 +1,4 @@
+---reads a file and returns. returns `nil` if there's any error.
 ---@param path string
 ---@return any
 local function safe_read(path)
@@ -9,6 +10,11 @@ local function safe_read(path)
 	end
 end
 
+---Represents a shader that supports live reloading during runtime.
+---
+---The **LiveShader** class monitors a shader file for changes and automatically
+---reloads it after a short delay when modifications are detected. Very useful
+---for rapid shader iteration and debugging without restarting the application.
 ---@class LiveShader
 ---@field _shader           any
 ---@field _shader_path      string
@@ -16,11 +22,12 @@ end
 ---@field _reload_delay     number
 ---@field _pending_reload   boolean
 ---@field _reload_timer     number
----@field _last_error       string
+---@field _compile_error    string
 local LiveShader = {}
 
 LiveShader.__index = LiveShader
 
+---create a new live shader from `path` and reload only `reload_delay` seconds after change in shader.
 ---@param path string
 ---@param reload_delay? number
 ---@return LiveShader
@@ -35,8 +42,8 @@ function LiveShader.new(path, reload_delay)
 		_reload_timer = 0,
 		_reload_delay = reload_delay or 0.25,
 
-		-- NOTE: we set compilation errors here (mostly)
-		_last_error = nil,
+		---keeps track of compile errors
+		_compile_error = nil,
 	}
 
 	setmetatable(obj, LiveShader)
@@ -79,7 +86,7 @@ function LiveShader:update(dt)
 	if ok then
 		self._shader = s
 		print("shader reloaded at", os.date("%H:%M:%S"))
-		self._last_error = nil
+		self._compile_error = nil
 		--compilation goes wrong
 	else
 		-- set the current shader nil
@@ -87,7 +94,7 @@ function LiveShader:update(dt)
 		self._shader = nil
 		local err_msg = "shader compile error:\n" .. s
 		print(err_msg)
-		self._last_error = err_msg
+		self._compile_error = err_msg
 	end
 end
 
@@ -131,13 +138,13 @@ end
 function LiveShader:show_errors()
 	love.graphics.push()
 	love.graphics.setColor(255, 0, 0, 255)
-	love.graphics.print(self._last_error, 10, 10)
+	love.graphics.print(self._compile_error, 10, 10)
 	love.graphics.pop()
 end
 
 ---@return boolean
 function LiveShader:has_error()
-	return self._last_error ~= nil
+	return self._compile_error ~= nil
 end
 
 ---@return boolean

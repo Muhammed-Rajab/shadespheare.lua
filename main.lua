@@ -10,7 +10,6 @@ parser:flag("-h --help", "shows this help message and exit")
 
 local run_cmd = parser:command("run", "run a shader in a LÖVE2D window")
 run_cmd:argument("shader", "path to shader file"):args(1)
-run_cmd:option("--delay", "shader reload delay in seconds", "0.25"):convert(tonumber)
 
 local new_cmd = parser:command("new", "create a new shader project")
 new_cmd:argument("shader", "path to new shader project")
@@ -23,9 +22,12 @@ local args = parser:parse()
 
 ---handle the cli
 if args.new then
+	---BUG: properly handle this
 	local template = [[
 uniform float iTime;
-uniform vec2 iResolution;
+uniform vec4  iMouse;
+uniform vec2  iDelta;
+uniform vec2  iResolution;
 
 vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 sc) {
 	vec2 uv = (sc / iResolution) * 2.0 - 1.0;
@@ -39,10 +41,9 @@ vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 sc) {
 	print("🆕 Created shader file: " .. args.shader)
 	love.event.quit()
 elseif args.watch then
-	print("shader is" .. args.shader)
-	require("src.init")(args.shader, true)
+	require("src.init")(args.shader, true, args.delay)
 elseif args.run then
-	require("src.init")(args.shader, false)
+	require("src.init")(args.shader, false, args.delay)
 else
 	parser:print_help()
 	love.event.quit()

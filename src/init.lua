@@ -1,6 +1,7 @@
 ---@param shader_path string
 ---@param watch boolean?
-local function Init(shader_path, watch)
+---@param reload_delay number?
+local function Init(shader_path, watch, reload_delay)
 	---logical window dimensions
 	WIDTH = nil
 	HEIGHT = nil
@@ -40,7 +41,7 @@ local function Init(shader_path, watch)
 		mouse.y = resolution.height / 2
 
 		---load the shader and call update initially
-		shader = LiveShader.new(shader_path, 0.25)
+		shader = LiveShader.new(shader_path, reload_delay == nil and 0.25 or reload_delay)
 		shader:update(0)
 
 		---set watch state (default: true)

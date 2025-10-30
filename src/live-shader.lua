@@ -255,8 +255,9 @@ end
 ---@param enabled boolean
 function LiveShader:set_watch(enabled)
 	self._watch_enabled = enabled
-	local state = enabled and "enabled ✅" or "disabled ⛔"
-	print(string.format("[%s] live shader watch %s", os.date("%H:%M:%S"), state))
+	local emoji = enabled and "✅" or "⛔"
+	local state = enabled and "enabled" or "disabled"
+	print(string.format("[%s] %s live shader watch %s", os.date("%H:%M:%S"), emoji, state))
 end
 
 ---returns whether the live shader is watching

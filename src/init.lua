@@ -1,7 +1,7 @@
 ---@param shader_path string
 ---@param watch boolean?
 ---@param reload_delay number?
-local function Init(shader_path, watch, reload_delay)
+local function initialize(shader_path, watch, reload_delay)
 	---logical window dimensions
 	WIDTH = nil
 	HEIGHT = nil
@@ -112,4 +112,4 @@ local function Init(shader_path, watch, reload_delay)
 	end
 end
 
-return Init
+return { Initialize = initialize }

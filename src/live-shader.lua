@@ -130,12 +130,19 @@ end
 ---check for changes in the shader file and recompile if there's any.
 ---@param dt number
 function LiveShader:update(dt)
-	if not self._watch_enabled then
+	local modtime = get_mod_time(self._shader_path)
+	if not modtime then
 		return
 	end
 
-	local modtime = get_mod_time(self._shader_path)
-	if not modtime then
+	-- First-time load
+	if self._last_modified == 0 then
+		self._last_modified = modtime
+		self:_reload()
+		return
+	end
+
+	if not self._watch_enabled then
 		return
 	end
 
@@ -155,6 +162,11 @@ function LiveShader:update(dt)
 		return
 	end
 
+	self:_reload()
+end
+
+---reload the shader based on current state
+function LiveShader:_reload()
 	local code = safe_read(self._shader_path)
 
 	self._pending_reload = false

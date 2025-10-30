@@ -1,4 +1,5 @@
 local argparse = require("lib.argparse")
+local app = require("src.init")
 
 ---removes '.' from arg
 table.remove(arg, 1)
@@ -22,7 +23,6 @@ local args = parser:parse()
 
 ---handle the cli
 if args.new then
-	---BUG: properly handle this
 	local template = [[
 uniform float iTime;
 uniform vec4  iMouse;
@@ -35,18 +35,29 @@ vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 sc) {
 	return vec4(col, 1.0);
 }
 ]]
-	local f = io.open(args.shader, "w")
+
+	local f, err = io.open(args.shader, "w")
+	if not f then
+		print(("[%s] error creating file: %s"):format(os.date("%H:%M:%S"), err))
+		love.event.quit(1)
+		return
+	end
 	f:write(template)
 	f:close()
-	print("🆕 Created shader file: " .. args.shader)
-	love.event.quit()
+
+	print(("[%s] 🆕 created shader file: %s"):format(os.date("%H:%M:%S"), args.shader))
 elseif args.watch then
-	require("src.init")(args.shader, true, args.delay)
+	print(("[%s] 👀 watching %s (reload delay %.2fs)"):format(os.date("%H:%M:%S"), args.shader, args.delay))
+	app.Initialize(args.shader, true, args.delay)
 elseif args.run then
-	require("src.init")(args.shader, false, args.delay)
+	print(("[%s] 🏃 running %s"):format(os.date("%H:%M:%S"), args.shader))
+	app.Initialize(args.shader, false, 0.25)
 else
 	parser:print_help()
-	love.event.quit()
-end
 
--- main.lua
+	if not love then
+		os.exit(0)
+	end
+	love.event.quit()
+	return
+end

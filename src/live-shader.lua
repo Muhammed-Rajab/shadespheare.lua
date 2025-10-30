@@ -2,12 +2,57 @@
 ---@param path string path to file to read
 ---@return any
 local function safe_read(path)
+	-- Try LÖVE’s virtual FS first
 	local ok, data = pcall(love.filesystem.read, path)
 	if ok and data then
 		return data
-	else
+	end
+
+	-- Normalize "./" or similar prefixes
+	local real_path = path:gsub("^%./", "")
+
+	-- Try reading from the actual OS filesystem
+	local f = io.open(real_path, "r")
+	if not f then
 		return nil
 	end
+	local content = f:read("*a")
+	f:close()
+	return content
+end
+
+---get modification time of a file, works for both love fs and OS paths
+---@param path string
+---@return number|nil
+local function get_mod_time(path)
+	-- Try LOVE’s virtual filesystem
+	local info = love.filesystem.getInfo(path)
+	if info and info.modtime then
+		return info.modtime
+	end
+
+	-- Try OS filesystem
+	local f = io.open(path, "r")
+	if f then
+		f:close()
+
+		-- Use system stat command (no lfs required)
+		local ok, modtime = pcall(function()
+			local quoted = string.format("%q", path) -- safely quoted for shell
+			local pipe = io.popen('stat -c %Y "' .. quoted .. '" 2>/dev/null')
+			if not pipe then
+				return nil
+			end
+			local out = pipe:read("*a")
+			pipe:close()
+			return tonumber(out)
+		end)
+		if ok and modtime then
+			return modtime
+		end
+	end
+
+	return nil
 end
 
 ---format compile errors
@@ -26,6 +71,18 @@ local function format_compile_errors(text, prefix)
 
 	-- Concatenate back with newlines
 	return table.concat(result)
+end
+
+---only applies color if the terminal supports ANSI colors
+---@param text string
+---@param code number
+---@return string
+local function colorize(text, code)
+	if os.getenv("TERM") then
+		return "\27[" .. code .. "m" .. text .. "\27[0m"
+	else
+		return text
+	end
 end
 
 ---Represents a shader that supports live reloading during runtime.
@@ -70,13 +127,13 @@ end
 ---check for changes in the shader file and recompile if there's any.
 ---@param dt number
 function LiveShader:update(dt)
-	local info = love.filesystem.getInfo(self._shader_path)
-	if not info then
+	local modtime = get_mod_time(self._shader_path)
+	if not modtime then
 		return
 	end
 
-	if info.modtime > self._last_modified then
-		self._last_modified = info.modtime -- stops this block from executing till next modification
+	if modtime > self._last_modified then
+		self._last_modified = modtime -- stops this block from executing till next modification
 		self._pending_reload = true
 		self._reload_timer = 0
 	end
@@ -106,7 +163,7 @@ function LiveShader:update(dt)
 	if ok then
 		self._shader = s
 		print(_time_prefix .. "✅ shader reloaded: " .. self._shader_path)
-		print((" "):rep(#_time_prefix) .. "\27[32mno compilation errors 👍\27[0m")
+		print((" "):rep(#_time_prefix) .. colorize("no compilation errors 👍", 32))
 		self._compile_error = nil
 
 	--- NOTE: this string is added to avoid warnings from the LSP. this makes sure that 's' is an error string
@@ -117,10 +174,7 @@ function LiveShader:update(dt)
 
 		local _err_msg_cli = _err_msg_header
 			.. (" "):rep(#_time_prefix)
-			.. "\27[31m"
-			.. "compile error: \n"
-			.. format_compile_errors(s, (" "):rep(#_time_prefix))
-			.. "\27[0m"
+			.. colorize("compile error: \n" .. format_compile_errors(s, (" "):rep(#_time_prefix)), 31)
 		io.write(_err_msg_cli)
 
 		local _err_msg_screen = _err_msg_header .. s

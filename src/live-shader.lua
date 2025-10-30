@@ -50,6 +50,7 @@ function LiveShader.new(path, reload_delay)
 	return obj
 end
 
+---check for changes in the shader file and recompile if there's any.
 ---@param dt number
 function LiveShader:update(dt)
 	local info = love.filesystem.getInfo(self._shader_path)
@@ -82,15 +83,11 @@ function LiveShader:update(dt)
 
 	local ok, s = pcall(love.graphics.newShader, code)
 
-	-- compilation goes well
 	if ok then
 		self._shader = s
 		print("shader reloaded at", os.date("%H:%M:%S"))
 		self._compile_error = nil
-		--compilation goes wrong
 	else
-		-- set the current shader nil
-		-- TODO: show error on screen?
 		self._shader = nil
 		local err_msg = "shader compile error:\n" .. s
 		print(err_msg)
@@ -98,7 +95,9 @@ function LiveShader:update(dt)
 	end
 end
 
+---checks whether the shader has a uniform
 ---@param name string
+---@return boolean
 function LiveShader:has_uniform(name)
 	if self._shader then
 		return self._shader:hasUniform(name)
@@ -106,6 +105,7 @@ function LiveShader:has_uniform(name)
 	return false
 end
 
+---set a value for a given uniform in the shader
 ---@param name string
 ---@param value any
 function LiveShader:set_uniform(name, value)
@@ -127,6 +127,7 @@ function LiveShader:set_uniform(name, value)
 	return true
 end
 
+---use the shader for rendering
 function LiveShader:use()
 	if self._shader then
 		love.graphics.setShader(self._shader)
@@ -135,6 +136,7 @@ function LiveShader:use()
 	end
 end
 
+---renders errors to the screen
 function LiveShader:show_errors()
 	love.graphics.push()
 	love.graphics.setColor(255, 0, 0, 255)
@@ -142,11 +144,13 @@ function LiveShader:show_errors()
 	love.graphics.pop()
 end
 
+---checks if there's any error
 ---@return boolean
 function LiveShader:has_error()
 	return self._compile_error ~= nil
 end
 
+---checks if the shader is loaded
 ---@return boolean
 function LiveShader:loaded()
 	return self._shader ~= nil

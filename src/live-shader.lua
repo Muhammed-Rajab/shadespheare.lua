@@ -10,12 +10,13 @@ local function safe_read(path)
 end
 
 ---@class LiveShader
----@field _shader          any
----@field _shader_path     string
----@field _last_modified   number
----@field _reload_delay    number
----@field _pending_reload  boolean
----@field _reload_timer    number
+---@field _shader           any
+---@field _shader_path      string
+---@field _last_modified    number
+---@field _reload_delay     number
+---@field _pending_reload   boolean
+---@field _reload_timer     number
+---@field _last_error       string
 local LiveShader = {}
 
 LiveShader.__index = LiveShader
@@ -33,6 +34,9 @@ function LiveShader.new(path, reload_delay)
 
 		_reload_timer = 0,
 		_reload_delay = reload_delay or 0.25,
+
+		-- NOTE: we set compilation errors here (mostly)
+		_last_error = nil,
 	}
 
 	setmetatable(obj, LiveShader)
@@ -75,12 +79,15 @@ function LiveShader:update(dt)
 	if ok then
 		self._shader = s
 		print("shader reloaded at", os.date("%H:%M:%S"))
+		self._last_error = nil
 		--compilation goes wrong
 	else
 		-- set the current shader nil
 		-- TODO: show error on screen?
 		self._shader = nil
-		print("shader compile error:\n", s)
+		local err_msg = "shader compile error:\n" .. s
+		print(err_msg)
+		self._last_error = err_msg
 	end
 end
 
@@ -119,6 +126,18 @@ function LiveShader:use()
 	else
 		love.graphics.setShader()
 	end
+end
+
+function LiveShader:show_errors()
+	love.graphics.push()
+	love.graphics.setColor(255, 0, 0, 255)
+	love.graphics.print(self._last_error, 10, 10)
+	love.graphics.pop()
+end
+
+---@return boolean
+function LiveShader:has_error()
+	return self._last_error ~= nil
 end
 
 ---@return boolean

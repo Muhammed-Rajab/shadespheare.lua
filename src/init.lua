@@ -40,12 +40,30 @@ local function initialize(shader_path, watch, reload_delay)
 		mouse.x = resolution.width / 2
 		mouse.y = resolution.height / 2
 
+		---check for shader file existence
+		local function shader_exists(path)
+			local info = love.filesystem.getInfo(path)
+			if info then
+				return true
+			end
+			local f = io.open(path, "r")
+			if f then
+				f:close()
+				return true
+			end
+			return false
+		end
+
+		if not shader_exists(shader_path) then
+			print(("[%s] ❌ shader file not found: %s"):format(os.date("%H:%M:%S"), shader_path))
+			love.event.quit(1)
+			return
+		end
+
 		---load the shader and call update initially
 		shader = LiveShader.new(shader_path, reload_delay == nil and 0.25 or reload_delay)
-		shader:update(0)
-
-		---set watch state (default: true)
 		shader:set_watch(watch ~= false)
+		shader:update(0)
 	end
 
 	---update resolution when window size changes
@@ -112,4 +130,4 @@ local function initialize(shader_path, watch, reload_delay)
 	end
 end
 
-return { Initialize = initialize }
+return { initialize = initialize }

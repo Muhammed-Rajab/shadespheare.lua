@@ -1,6 +1,13 @@
 local argparse = require("lib.argparse")
 local app = require("src.init")
 
+local function quit()
+	if not love then
+		os.exit(0)
+	end
+	love.event.quit()
+end
+
 ---removes '.' from arg
 table.remove(arg, 1)
 
@@ -36,6 +43,15 @@ vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 sc) {
 }
 ]]
 
+	---make sure file doesn't exist
+	local _f = io.open(args.shader, "r")
+	if _f then
+		_f:close()
+		print(("[%s] ⚠️ file already exists: %s"):format(os.date("%H:%M:%S"), args.shader))
+		love.event.quit(1)
+		return
+	end
+
 	local f, err = io.open(args.shader, "w")
 	if not f then
 		print(("[%s] error creating file: %s"):format(os.date("%H:%M:%S"), err))
@@ -46,6 +62,7 @@ vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 sc) {
 	f:close()
 
 	print(("[%s] 🆕 created shader file: %s"):format(os.date("%H:%M:%S"), args.shader))
+	quit()
 elseif args.watch then
 	print(("[%s] 👀 watching %s (reload delay %.2fs)"):format(os.date("%H:%M:%S"), args.shader, args.delay))
 	app.initialize(args.shader, true, args.delay)
@@ -54,10 +71,5 @@ elseif args.run then
 	app.initialize(args.shader, false, 0.25)
 else
 	parser:print_help()
-
-	if not love then
-		os.exit(0)
-	end
-	love.event.quit()
-	return
+	quit()
 end

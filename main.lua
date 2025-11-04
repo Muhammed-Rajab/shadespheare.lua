@@ -65,10 +65,10 @@ vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 sc) {
 	quit()
 elseif args.watch then
 	print(("[%s] 👀 watching %s (reload delay %.2fs)"):format(os.date("%H:%M:%S"), args.shader, args.delay))
-	app.initialize(args.shader, true, args.delay)
+	app.initialize(args.shader, true, args.delay, false)
 elseif args.run then
 	print(("[%s] 🏃 running %s"):format(os.date("%H:%M:%S"), args.shader))
-	app.initialize(args.shader, false, 0.25)
+	app.initialize(args.shader, false, 0.25, false)
 else
 	parser:print_help()
 	quit()

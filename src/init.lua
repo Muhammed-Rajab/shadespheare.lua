@@ -1,7 +1,8 @@
 ---@param shader_path string
 ---@param watch boolean?
 ---@param reload_delay number?
-local function initialize(shader_path, watch, reload_delay)
+---@param show_fps boolean?
+local function initialize(shader_path, watch, reload_delay, show_fps)
 	---logical window dimensions
 	WIDTH = nil
 	HEIGHT = nil
@@ -122,10 +123,12 @@ local function initialize(shader_path, watch, reload_delay)
 			shader:show_errors()
 		---else render the fps
 		else
-			love.graphics.setColor(0, 0, 0, 255)
-			love.graphics.rectangle("fill", 7, 10, 157, 40)
-			love.graphics.setColor(0, 255, 0, 255)
-			love.graphics.print("FPS: " .. love.timer.getFPS(), 10, 10)
+			if show_fps then
+				love.graphics.setColor(0, 0, 0, 255)
+				love.graphics.rectangle("fill", 7, 10, 157, 40)
+				love.graphics.setColor(0, 255, 0, 255)
+				love.graphics.print("FPS: " .. love.timer.getFPS(), 10, 10)
+			end
 		end
 	end
 end

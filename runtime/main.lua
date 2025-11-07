@@ -21,6 +21,7 @@ for i = 1, #arg do
 	end
 end
 
+---WARN: add a better fallback
 shader = shader or "ray-marching.glsl" -- fallback
 
 ---WARN: turn on when development

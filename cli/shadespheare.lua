@@ -77,14 +77,13 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
 	if _f then
 		_f:close()
 		print(("[%s] ⚠️ file already exists: %s"):format(os.date("%H:%M:%S"), args.shader))
-		love.event.quit(1)
+		quit()
 		return
 	end
 
 	local f, err = io.open(args.shader, "w")
 	if not f then
 		print(("[%s] error creating file: %s"):format(os.date("%H:%M:%S"), err))
-		love.event.quit(1)
 		return
 	end
 	f:write(template)

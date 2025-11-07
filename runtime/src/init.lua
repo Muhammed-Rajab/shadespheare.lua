@@ -9,10 +9,10 @@ local function initialize(shader_path, watch, reload_delay, show_fps)
 	SCALE = nil
 	I_SCALE = nil
 
-	local settings = require("settings")
-	local utils = require("src.utils")
+	local settings = require("runtime.settings")
+	local utils = require("runtime.src.utils")
 
-	local LiveShader = require("src.live-shader")
+	local LiveShader = require("runtime.src.live-shader")
 
 	---@type LiveShader
 	local shader

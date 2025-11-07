@@ -1,7 +1,7 @@
 local utils = {}
 
-local settings = require("settings")
-local fontman = require("src.fontmanager")
+local settings = require("runtime.settings")
+local fontman = require("runtime.src.fontmanager")
 
 local I_SCALE = 1 / settings.scale_factor
 

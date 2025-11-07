@@ -1,5 +1,5 @@
 local argparse = require("lib.argparse")
-local app = require("src.init")
+local app = require("runtime")
 
 local function quit()
 	if not love then

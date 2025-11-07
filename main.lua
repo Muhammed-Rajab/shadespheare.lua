@@ -31,10 +31,7 @@ local args = parser:parse()
 ---handle the cli
 if args.new then
 	local template = [[
-uniform float iTime;
-uniform vec4  iMouse;
-uniform vec2  iDelta;
-uniform vec3  iResolution;
+void mainImage(out vec4 fragColor, in vec2 fragCoord);
 
 vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 sc) {
 
@@ -46,6 +43,14 @@ vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 sc) {
 
 	return col;
 }
+
+/**********-------------------------------
+* YOUR CODE STARTS HERE
+*------------------------------**********/
+uniform float iTime;
+uniform vec4  iMouse;
+uniform vec2  iDelta;
+uniform vec3  iResolution;
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord) {
 

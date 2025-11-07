@@ -98,7 +98,8 @@ local function initialize(shader_path, watch, reload_delay, show_fps)
 		--- caused by shader code optimisation, when those uniforms are left unused.
 		--- these can be ignored
 		shader:set_uniform("iTime", love.timer.getTime())
-		shader:set_uniform("iResolution", { resolution.width, resolution.height })
+		-- WARN: 2.0 is pixel ratio, which must be added later.
+		shader:set_uniform("iResolution", { resolution.width, resolution.height, 2.0 })
 		shader:set_uniform("iMouse", { mouse.x, mouse.y, mouse.click_x, mouse.click_y })
 		shader:set_uniform("iDelta", { mouse.dx, mouse.dy })
 	end

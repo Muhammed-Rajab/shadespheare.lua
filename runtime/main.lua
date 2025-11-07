@@ -3,6 +3,9 @@ local watch = false
 local delay = 0.25
 local show_fps = false
 
+---removes "runtime" from `love runtime`
+table.remove(arg, 1)
+
 for i = 1, #arg do
 	local a = arg[i]
 
@@ -20,6 +23,7 @@ end
 
 shader = shader or "ray-marching.glsl" -- fallback
 
-print("LOADED SHADER:", shader, "WATCH:", watch, "DELAY:", delay, "FPS:", show_fps)
+---WARN: turn on when development
+-- print("LOADED SHADER:", shader, "WATCH:", watch, "DELAY:", delay, "FPS:", show_fps)
 
 require("runtime.src.init")(shader, watch, delay, show_fps)

@@ -7,6 +7,20 @@ local function quit()
 	love.event.quit()
 end
 
+local function abspath(path)
+	-- normalize slashes
+	path = path:gsub("\\", "/")
+
+	-- if it's already absolute, just return it
+	if path:sub(1, 1) == "/" then
+		return path
+	end
+
+	-- get working directory
+	local cwd = io.popen("pwd"):read("*l")
+	return cwd .. "/" .. path
+end
+
 ---WARN: rewrite needs this to be removed
 ---removes '.' from arg
 -- table.remove(arg, 1)
@@ -82,12 +96,14 @@ end
 
 local function handle_run()
 	print(("[%s] 🏃 running %s"):format(os.date("%H:%M:%S"), args.shader))
-	os.execute(string.format('love "%s" "%s"', "runtime", args.shader))
+	local shader_abs_path = abspath(args.shader)
+	os.execute(string.format('love "%s" "%s"', "runtime", shader_abs_path))
 end
 
 local function handle_watch()
 	print(("[%s] 👀 watching %s (reload delay %.2fs)"):format(os.date("%H:%M:%S"), args.shader, args.delay))
-	os.execute(string.format('love "%s" "%s" --watch --delay=%s', "runtime", args.shader, args.delay))
+	local shader_abs_path = abspath(args.shader)
+	os.execute(string.format('love "%s" "%s" --watch --delay=%s', "runtime", shader_abs_path, args.delay))
 end
 
 ---handle the cli

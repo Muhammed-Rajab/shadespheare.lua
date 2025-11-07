@@ -1,5 +1,4 @@
 local argparse = require("lib.argparse")
-local app = require("runtime")
 
 local function quit()
 	if not love then
@@ -8,13 +7,13 @@ local function quit()
 	love.event.quit()
 end
 
+---WARN: rewrite needs this to be removed
 ---removes '.' from arg
-table.remove(arg, 1)
+-- table.remove(arg, 1)
 
 local parser = argparse("shadespheare", "live GLSL shader preview")
 
 parser:flag("-v --verbose", "enable verbose output")
-parser:flag("-h --help", "shows this help message and exit")
 
 local run_cmd = parser:command("run", "run a shader in a LÖVE2D window")
 run_cmd:argument("shader", "path to shader file"):args(1)
@@ -28,8 +27,7 @@ watch_cmd:option("--delay", "shader reload delay", "0.25"):convert(tonumber)
 
 local args = parser:parse()
 
----handle the cli
-if args.new then
+local function handle_new()
 	local template = [[
 void mainImage(out vec4 fragColor, in vec2 fragCoord);
 
@@ -80,12 +78,25 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
 
 	print(("[%s] 🆕 created shader file: %s"):format(os.date("%H:%M:%S"), args.shader))
 	quit()
-elseif args.watch then
-	print(("[%s] 👀 watching %s (reload delay %.2fs)"):format(os.date("%H:%M:%S"), args.shader, args.delay))
-	app.initialize(args.shader, true, args.delay, false)
-elseif args.run then
+end
+
+local function handle_run()
 	print(("[%s] 🏃 running %s"):format(os.date("%H:%M:%S"), args.shader))
-	app.initialize(args.shader, false, 0.25, false)
+	os.execute(string.format('love "%s" "%s"', "runtime", args.shader))
+end
+
+local function handle_watch()
+	print(("[%s] 👀 watching %s (reload delay %.2fs)"):format(os.date("%H:%M:%S"), args.shader, args.delay))
+	os.execute(string.format('love "%s" "%s" --watch --delay=%s', "runtime", args.shader, args.delay))
+end
+
+---handle the cli
+if args.new then
+	handle_new()
+elseif args.watch then
+	handle_watch()
+elseif args.run then
+	handle_run()
 else
 	parser:print_help()
 	quit()

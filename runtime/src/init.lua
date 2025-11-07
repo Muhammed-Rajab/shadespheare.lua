@@ -134,4 +134,4 @@ local function initialize(shader_path, watch, reload_delay, show_fps)
 	end
 end
 
-return { initialize = initialize }
+return initialize

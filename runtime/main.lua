@@ -18,7 +18,8 @@ for i = 1, #arg do
 	end
 end
 
----TODO: add a better fall back
 shader = shader or "ray-marching.glsl" -- fallback
+
+print("LOADED SHADER:", shader, "WATCH:", watch, "DELAY:", delay, "FPS:", show_fps)
 
 require("runtime.src.init")(shader, watch, delay, show_fps)

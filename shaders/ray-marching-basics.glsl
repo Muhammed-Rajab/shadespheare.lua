@@ -51,21 +51,17 @@ vec3 calculate_normal(in vec3 p) {
 }
 
 // SHADOW
-float soft_shadow(in vec3 ro, in vec3 rd, float mint, float maxt, float w) {
-  float res = 1.0;
-  float ph = 1e20;
+float shadow(in vec3 ro, in vec3 rd, float mint, float maxt, float k) {
   float t = mint;
-  for (int i = 0; i < 256 && t < maxt; i++) {
+  float res = 1.0;
+  for (int i = 0; i < 128 && t < maxt; i++) {
     float h = map(ro + rd * t).x;
+    res = min(res, k * h / t); // soft attenuation
     if (h < 0.001)
       return 0.0;
-    float y = h * h / (2.0 * ph);
-    float d = sqrt(h * h - y * y);
-    res = min(res, d / (w * max(0.0, t - y)));
-    ph = h;
     t += h;
   }
-  return res;
+  return clamp(res, 0.0, 1.0);
 }
 
 // MAP
@@ -154,8 +150,8 @@ vec3 march_ray(in vec3 ro, in vec3 rd) {
 
       vec3 object_color = get_color(object_id);
 
-      // vec3 light_pos = vec3(cos(-iTime * 4.0), sin(-iTime * 4.0) + 1, 0);
-      vec3 light_pos = vec3(1, 1, 0);
+      vec3 light_pos = vec3(cos(-iTime * 4.0), sin(-iTime * 4.0) + 1, 0);
+      // vec3 light_pos = vec3(0, 1, 0);
       vec3 light_dir = normalize(light_pos - curr_pos);
       // vec3 light_color = vec3(1.0, 0.8, 0.6);
       vec3 light_color = vec3(1.0);
@@ -164,16 +160,22 @@ vec3 march_ray(in vec3 ro, in vec3 rd) {
       float ambient = 0.1;
       vec3 ambient_color = ambient * light_color;
 
+      // shadow
+      float shadow_softness = 32.0;
+      float shadow_factor =
+          shadow(curr_pos + normal * 0.001, light_dir, 0.001,
+                 length(light_pos - curr_pos), shadow_softness);
+
       // diffuse lighting
       float diffuse = max(dot(normal, light_dir), 0.0);
-      vec3 diffuse_color = diffuse * light_color;
+      vec3 diffuse_color = diffuse * light_color * shadow_factor;
 
       // specular lighting
       vec3 view_dir = normalize(ro - curr_pos);
       vec3 reflect_dir = reflect(-light_dir, normal);
 
       float shininess = 32.0;
-      float specular_strength = 1.0;
+      float specular_strength = 0.5;
       float specular = pow(max(dot(view_dir, reflect_dir), 0.0), shininess) *
                        specular_strength;
       vec3 specular_color = specular * vec3(1.0);
@@ -218,7 +220,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
   mouse *= vec2(AR, -1);
 
   // camera setup
-  vec3 camera_position = vec3(0 * sin(iTime), 0, 1);
+  vec3 camera_position = vec3(1 * sin(iTime * 0.4), 0, 2);
   vec3 ro = camera_position;
   float fov = radians(60.0);
   vec3 rd = normalize(vec3(uv * tan(fov * 0.5), -1.0));

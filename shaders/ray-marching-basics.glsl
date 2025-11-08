@@ -41,6 +41,24 @@ float sdfPlane(in vec3 p, in vec3 n, float h) {
   return dot(p, n) + h;
 }
 
+float dot2(in vec2 v) { return v.x * v.x + v.y * v.y; }
+
+float sdHeart(in vec2 p) {
+  p.x = abs(p.x);
+
+  if (p.y + p.x > 1.0)
+    return sqrt(dot2(p - vec2(0.25, 0.75))) - sqrt(2.0) / 4.0;
+  return sqrt(min(dot2(p - vec2(0.00, 1.00)),
+                  dot2(p - 0.5 * max(p.x + p.y, 0.0)))) *
+         sign(p.x - p.y);
+}
+
+float sdHeart3D(vec3 p, vec3 s) {
+  float d2d = sdHeart(p.xy / s.xy);      // evaluate the 2D heart in XY plane
+  float halfDepth = s.z;                 // thickness along Z
+  return max(d2d, abs(p.z) - halfDepth); // extrude along Z
+}
+
 float sdRoundBox(vec3 p, vec3 b, float r) {
   vec3 q = abs(p) - b + r;
   return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0) - r;
@@ -71,17 +89,59 @@ float shadow(in vec3 ro, in vec3 rd, float mint, float maxt, float k) {
   return clamp(res, 0.0, 1.0);
 }
 
+// OPERATIONS
+vec2 smin(float a, float b, float k) {
+  k *= 0.5;
+  float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);
+  float d = mix(b, a, h) - k * h * (1.0 - h);
+  return vec2(d, h); // h can be used as blend factor
+}
+
+// CHECKERED COLOR
+vec3 get_checkered_color(in vec3 pos, float scale) {
+  float checker = mod(floor(pos.x * scale) + floor(pos.z * scale), 2.0);
+  vec3 dark = rgb(255, 160, 180);
+  vec3 light = rgb(255, 200, 210);
+
+  return mix(dark, light, checker);
+}
+
+vec3 rotateX(vec3 p, float angle) {
+  float c = cos(angle);
+  float s = sin(angle);
+  return vec3(p.x, c * p.y - s * p.z, s * p.y + c * p.z);
+}
+
+vec3 rotateY(vec3 p, float angle) {
+  float c = cos(angle);
+  float s = sin(angle);
+  return vec3(c * p.x + s * p.z, p.y, -s * p.x + c * p.z);
+}
+
+vec3 rotateZ(vec3 p, float angle) {
+  float c = cos(angle);
+  float s = sin(angle);
+  return vec3(c * p.x - s * p.y, s * p.x + c * p.y, p.z);
+}
+
+vec3 rotateXYZ(vec3 p, vec3 angles) {
+  p = rotateX(p, angles.x);
+  p = rotateY(p, angles.y);
+  p = rotateZ(p, angles.z);
+  return p;
+}
+
 // MAP
-vec3 get_color(float id) {
+vec3 get_color(float id, in vec3 pos) {
 
   // sphere 0
   if (id == 0.0) {
-    return vec3(1.0, 0, 0);
+    return rgb(220, 0, 50);
   }
 
   // rect 1
   if (id == 1.0) {
-    return vec3(0, 1.0, 0);
+    return vec3(0.0, 1.0, 1.0);
   }
 
   // sphere 2
@@ -91,7 +151,7 @@ vec3 get_color(float id) {
 
   // floor 3
   if (id == 3.0) {
-    return vec3(0.5);
+    return get_checkered_color(pos, 1.0);
   }
 
   // no id available
@@ -101,25 +161,35 @@ vec3 get_color(float id) {
 float map(in vec3 pos, out vec3 color) {
 
   // sphere 0
-  float d0 = sdfSphere(pos, vec3(0, 0, -2), 0.75);
-  vec3 c0 = get_color(0);
+  // float d0 = sdfSphere(pos, vec3(sin(iTime) - 0.5, 0, -2.25), 0.75);
+  // vec3 c0 = get_color(0, pos);
+  vec3 p0 = pos - vec3(sin(iTime), 0.5 * sin(iTime), -2);
+  p0 = rotateXYZ(
+      p0, vec3(radians(10) * 0, iTime * 0.5, radians(10) * sin(5 * iTime)));
+  float d0 = sdHeart3D(p0, vec3(1.5, 1.5, 0.05));
+  vec3 c0 = get_color(0, pos);
 
   // rect 1
-  float d1 = sdRoundBox(pos - vec3(-1.85, 0, -2.5), vec3(1, 0.75, 0.75), .05);
-  vec3 c1 = get_color(1);
+  vec3 p1 = pos - vec3(-1.5, sin(iTime), -2.5);
+  float d1 = sdRoundBox(p1, vec3(1, 0.75, 0.75), .05);
+  vec3 c1 = get_color(1, pos);
 
   // floor 3
   float d3 = sdfPlane(pos, vec3(0, 1, 0), 1);
-  vec3 c3 = get_color(3);
+  vec3 c3 = get_color(3, pos);
 
-  // find closest
   float dist = d0;
   color = c0;
 
-  if (d1 < dist) {
-    dist = d1;
-    color = c1;
-  }
+  // vec2 res = smin(dist, d1, .3);
+  // dist = res.x;
+  // color = mix(color, c1, res.y);
+
+  // if (d1 < dist) {
+  //   dist = d1;
+  //   color = c1;
+  // }
+
   if (d3 < dist) {
     dist = d3;
     color = c3;
@@ -140,7 +210,7 @@ vec3 march_ray(in vec3 ro, in vec3 rd) {
   float t = 0.0;
   const float NUM_MAX_STEPS = 512;
   const float MIN_HIT_DISTANCE = 0.001;
-  const float MAX_TRACE_DISTANCE = 500.0;
+  const float MAX_TRACE_DISTANCE = 100.0;
 
   // BUG: id isn't used anymore
   float object_id = -1.0;
@@ -160,8 +230,8 @@ vec3 march_ray(in vec3 ro, in vec3 rd) {
 
       // vec3 object_color = get_color(object_id);
 
-      vec3 light_pos = vec3(cos(-iTime * 4.0), 0, 0);
-      // vec3 light_pos = vec3(0, 1, 0);
+      // vec3 light_pos = vec3(cos(-iTime * 4.0), 0, 0);
+      vec3 light_pos = vec3(0, 2, 0);
       vec3 light_dir = normalize(light_pos - curr_pos);
       // vec3 light_color = vec3(1.0, 0.8, 0.6);
       vec3 light_color = vec3(1.0);
@@ -185,7 +255,7 @@ vec3 march_ray(in vec3 ro, in vec3 rd) {
       vec3 reflect_dir = reflect(-light_dir, normal);
 
       float shininess = 32.0;
-      float specular_strength = 0.5;
+      float specular_strength = 0.7;
       float specular = pow(max(dot(view_dir, reflect_dir), 0.0), shininess) *
                        specular_strength;
       vec3 specular_color = specular * vec3(1.0);
@@ -205,8 +275,10 @@ vec3 march_ray(in vec3 ro, in vec3 rd) {
   }
 
   // background color
-  vec3 bg1 = vec3(1.0, 1.0, 1.0);
-  vec3 bg2 = vec3(0.2, 0.4, 0.8);
+  // vec3 bg1 = vec3(1.0, 1.0, 1.0);
+  // vec3 bg2 = vec3(0.2, 0.4, 0.8);
+  vec3 bg1 = rgb(255, 218, 185);
+  vec3 bg2 = rgb(255, 105, 180);
   return mix(bg1, bg2, rd.y);
 }
 
@@ -228,5 +300,10 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
   float fov = radians(60.0);
   vec3 rd = normalize(vec3(uv * tan(fov * 0.5), -1.0));
 
-  fragColor = vec4(march_ray(ro, rd), 1.0);
+  vec4 color = vec4(march_ray(ro, rd), 1.0);
+
+  // gamma correction
+  color = pow(color, vec4(1.0 / 2.2));
+
+  fragColor = vec4(color.xyz, 1.0);
 }

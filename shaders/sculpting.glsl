@@ -258,7 +258,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
   mouse *= vec2(AR, -1);
 
   // camera setup
-  vec3 camera_position = vec3(2 * sin(iTime), 0, 25 * abs(sin(0.5 * iTime)));
+  vec3 camera_position = vec3(0, 0, 1);
   vec3 ro = camera_position;
   float fov = radians(60.0);
   vec3 rd = normalize(vec3(uv * tan(fov * 0.5), -1.0));

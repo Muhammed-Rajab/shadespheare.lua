@@ -21,6 +21,10 @@ local function initialize(shader_path, watch, reload_delay, show_fps)
 	local resolution = { width = 0, height = 0 }
 	local mouse = { x = 0, y = 0, click_x = 0, click_y = 0, dx = 0, dy = 0 }
 
+	---WARN: test texture
+	local my_texture
+	local my_bg
+
 	function love.load()
 		---window setup
 		WIDTH = love.graphics.getWidth()
@@ -65,6 +69,13 @@ local function initialize(shader_path, watch, reload_delay, show_fps)
 		shader = LiveShader.new(shader_path, reload_delay == nil and 0.25 or reload_delay)
 		shader:set_watch(watch ~= false)
 		shader:update(0)
+
+		---WARN:
+		---load texture
+		-- my_texture = love.graphics.newImage("gato.png")
+		-- my_texture = love.graphics.newImage("earth_daymap.jpg")
+		my_texture = love.graphics.newImage("moon_texture.jpg")
+		my_bg = love.graphics.newImage("stars.jpg")
 	end
 
 	---update resolution when window size changes
@@ -102,6 +113,8 @@ local function initialize(shader_path, watch, reload_delay, show_fps)
 		shader:set_uniform("iResolution", { resolution.width, resolution.height, 2.0 })
 		shader:set_uniform("iMouse", { mouse.x, mouse.y, mouse.click_x, mouse.click_y })
 		shader:set_uniform("iDelta", { mouse.dx, mouse.dy })
+		shader:set_uniform("myTexture", my_texture)
+		shader:set_uniform("myBG", my_bg)
 	end
 
 	function love.draw()

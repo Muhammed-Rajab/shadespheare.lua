@@ -18,6 +18,8 @@ uniform float iTime;
 uniform vec4 iMouse;
 uniform vec2 iDelta;
 uniform vec3 iResolution;
+extern Image myTexture;
+extern Image myBG;
 
 // DEFINITIONS
 float map(in vec3 pos, out vec3 color);
@@ -119,10 +121,21 @@ vec3 rotateXYZ(vec3 p, vec3 angles) {
 }
 
 // MAP
+vec2 sphereUV(vec3 p) {
+  // Convert xyz → spherical coordinates
+  float u = atan(p.z, p.x) / (2.0 * 3.14159) + 0.5;
+  float v = asin(p.y) / 3.14159 + 0.5;
+  v = 1.0 - v; // flip this bitch
+  return vec2(u, v);
+}
+
 vec3 get_color(float id, in vec3 pos) {
   // sphere 1
   if (id == 1) {
-    return rgb(255, 0, 0);
+    vec2 uv = sphereUV(pos);
+    vec4 tex = Texel(myTexture, uv);
+    tex = pow(tex, vec4(2.2));
+    return tex.rgb;
   }
 
   // floor 3
@@ -137,16 +150,23 @@ vec3 get_color(float id, in vec3 pos) {
 float map(in vec3 pos, out vec3 color) {
 
   // sphere 1
-  float d1 = sdfSphere(pos, vec3(0, 0, -2), 1);
-  vec3 c1 = get_color(1, pos);
+  vec3 cen1 = vec3(0, 0, -2);
+  vec3 p_local = pos - cen1;
+  p_local = rotateXYZ(p_local, vec3(0, .5 * iTime, 0));
+  vec3 p1 = p_local + cen1;
+  float d1 = sdfSphere(p1, cen1, 1);
+  vec3 c1 = get_color(1, p_local);
 
   // floor 3
   float floor = sdfPlane(pos, vec3(0, 1, 0), 1);
   vec3 c_floor = get_color(3, pos);
 
   // default is floor
-  float dist = floor;
-  color = c_floor;
+  // float dist = floor;
+  // color = c_floor;
+
+  float dist = d1;
+  color = c1;
 
   // sphere
   if (d1 < dist) {
@@ -191,7 +211,7 @@ vec4 march_ray(in vec3 ro, in vec3 rd) {
       // vec3 object_color = get_color(object_id);
 
       // vec3 light_pos = vec3(cos(-iTime * 4.0), 0, 0);
-      vec3 light_pos = vec3(-1, 2, 0);
+      vec3 light_pos = vec3(0., 0, .5);
       vec3 light_dir = normalize(light_pos - curr_pos);
       // vec3 light_color = vec3(1.0, 0.8, 0.6);
       vec3 light_color = vec3(1.0);
@@ -215,7 +235,7 @@ vec4 march_ray(in vec3 ro, in vec3 rd) {
       vec3 reflect_dir = reflect(-light_dir, normal);
 
       float shininess = 32.0;
-      float specular_strength = 0.7;
+      float specular_strength = 0.;
       float specular = pow(max(dot(view_dir, reflect_dir), 0.0), shininess) *
                        specular_strength;
       vec3 specular_color = specular * vec3(1.0);
@@ -236,13 +256,14 @@ vec4 march_ray(in vec3 ro, in vec3 rd) {
     t += d;
   }
 
-  // background color
-  vec3 bg1 = vec3(1.0, 1.0, 1.0);
-  vec3 bg2 = vec3(0.2, 0.4, 0.8);
-  // vec3 bg1 = rgb(255, 218, 185);
-  // vec3 bg2 = rgb(255, 105, 180);
-  vec3 bg = mix(bg1, bg2, rd.y);
-  return vec4(bg, t);
+  // // background color
+  // vec3 bg1 = vec3(1.0, 1.0, 1.0);
+  // vec3 bg2 = vec3(0.2, 0.4, 0.8);
+  // // vec3 bg1 = rgb(255, 218, 185);
+  // // vec3 bg2 = rgb(255, 105, 180);
+  // vec3 bg = mix(bg1, bg2, rd.y);
+  // return vec4(bg, t);
+  return vec4(vec3(0.0), -1.0); // -1.0 means no hit
 }
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord) {
@@ -258,7 +279,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
   mouse *= vec2(AR, -1);
 
   // camera setup
-  vec3 camera_position = vec3(0, 0, 1);
+  vec3 camera_position = vec3(0, 0, 3 * abs(sin(iTime * 0.1 + radians(-45))));
   vec3 ro = camera_position;
   float fov = radians(60.0);
   vec3 rd = normalize(vec3(uv * tan(fov * 0.5), -1.0));
@@ -267,14 +288,25 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
   vec3 color = result.xyz;
   float t = result.w;
 
-  // distance fog
-  float fog_density = 0.01;
-  float fog_near = 10.0; // start fading at distance
-  float fog_far = 20.0;  // completely faded by this distance
-  float fog_amount = smoothstep(fog_near, fog_far, t);
-  vec3 fog_color = rgb(255, 215, 230);
+  if (t < 0.0) {
 
-  color = mix(color, fog_color, fog_amount);
+    vec2 bg_uv = fragCoord / iResolution.xy;
+
+    vec3 bg = Texel(myBG, bg_uv).rgb;
+    fragColor = vec4(bg, 1.0);
+
+    return;
+  }
+
+  // // distance fog
+  // float fog_density = 0.01;
+  // float fog_near = 10.0; // start fading at distance
+  // float fog_far = 20.0;  // completely faded by this distance
+  // float fog_amount = smoothstep(fog_near, fog_far, t);
+  // vec3 fog_color = rgb(255, 215, 230);
+  // // vec3 fog_color = rgb(0, 0, 0);
+
+  // color = mix(color, fog_color, fog_amount);
 
   // gamma correction
   color = pow(color, vec3(1.0 / 2.2));

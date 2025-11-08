@@ -20,7 +20,9 @@ uniform vec2 iDelta;
 uniform vec3 iResolution;
 
 // DEFINITIONS
-vec2 map(in vec3 pos);
+float map(in vec3 pos, out vec3 color);
+float map(vec3 pos);
+
 vec3 calculate_norma(in vec3 p);
 
 // HELPERS
@@ -48,9 +50,9 @@ float sdRoundBox(vec3 p, vec3 b, float r) {
 vec3 calculate_normal(in vec3 p) {
   const vec3 eps = vec3(0.001, 0.0, 0.0);
 
-  float dx = map(p + eps.xyy).x - map(p - eps.xyy).x;
-  float dy = map(p + eps.yxy).x - map(p - eps.yxy).x;
-  float dz = map(p + eps.yyx).x - map(p - eps.yyx).x;
+  float dx = map(p + eps.xyy) - map(p - eps.xyy);
+  float dy = map(p + eps.yxy) - map(p - eps.yxy);
+  float dz = map(p + eps.yyx) - map(p - eps.yyx);
 
   return normalize(vec3(dx, dy, dz));
 }
@@ -60,7 +62,7 @@ float shadow(in vec3 ro, in vec3 rd, float mint, float maxt, float k) {
   float t = mint;
   float res = 1.0;
   for (int i = 0; i < 128 && t < maxt; i++) {
-    float h = map(ro + rd * t).x;
+    float h = map(ro + rd * t);
     res = min(res, k * h / t); // soft attenuation
     if (h < 0.001)
       return 0.0;
@@ -96,38 +98,40 @@ vec3 get_color(float id) {
   return vec3(1.0);
 }
 
-vec2 map(in vec3 pos) {
+float map(in vec3 pos, out vec3 color) {
 
   // sphere 0
   float d0 = sdfSphere(pos, vec3(0, 0, -2), 0.75);
+  vec3 c0 = get_color(0);
 
   // rect 1
   float d1 = sdRoundBox(pos - vec3(-1.85, 0, -2.5), vec3(1, 0.75, 0.75), .05);
-
-  // sphere 2
-  float d2 = sdfSphere(pos, vec3(1.5, 0, -2), .75);
+  vec3 c1 = get_color(1);
 
   // floor 3
   float d3 = sdfPlane(pos, vec3(0, 1, 0), 1);
+  vec3 c3 = get_color(3);
 
   // find closest
-  float id = 0.0;
   float dist = d0;
+  color = c0;
 
   if (d1 < dist) {
     dist = d1;
-    id = 1.0;
-  }
-  if (d2 < dist) {
-    dist = d2;
-    id = 2.0;
+    color = c1;
   }
   if (d3 < dist) {
     dist = d3;
-    id = 3.0;
+    color = c3;
   }
 
-  return vec2(dist, id);
+  return dist;
+}
+
+// overload that ignores color
+float map(vec3 pos) {
+  vec3 dummy;
+  return map(pos, dummy);
 }
 
 // RAY MARCHER
@@ -138,6 +142,7 @@ vec3 march_ray(in vec3 ro, in vec3 rd) {
   const float MIN_HIT_DISTANCE = 0.001;
   const float MAX_TRACE_DISTANCE = 500.0;
 
+  // BUG: id isn't used anymore
   float object_id = -1.0;
 
   for (int i = 0; i < NUM_MAX_STEPS; i += 1) {
@@ -145,15 +150,15 @@ vec3 march_ray(in vec3 ro, in vec3 rd) {
     vec3 curr_pos = ro + rd * t;
 
     // distance to closest
-    vec2 hit_info = map(curr_pos);
-    float d = hit_info.x;
-    object_id = hit_info.y;
+    vec3 object_color = vec3(0);
+
+    float d = map(curr_pos, object_color);
 
     if (d <= MIN_HIT_DISTANCE) {
       // calculte normal
       vec3 normal = calculate_normal(curr_pos);
 
-      vec3 object_color = get_color(object_id);
+      // vec3 object_color = get_color(object_id);
 
       vec3 light_pos = vec3(cos(-iTime * 4.0), 0, 0);
       // vec3 light_pos = vec3(0, 1, 0);
@@ -184,13 +189,6 @@ vec3 march_ray(in vec3 ro, in vec3 rd) {
       float specular = pow(max(dot(view_dir, reflect_dir), 0.0), shininess) *
                        specular_strength;
       vec3 specular_color = specular * vec3(1.0);
-
-      if (object_id == 3.0) { // floor
-        float scale = 1.0;    // squares per unit
-        float checker =
-            mod(floor(curr_pos.x * scale) + floor(curr_pos.z * scale), 2.0);
-        object_color *= 0.3 + 0.7 * checker; // alternate dark/light squares
-      }
 
       vec3 color =
           object_color * (ambient_color + diffuse_color) + specular_color;

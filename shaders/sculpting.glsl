@@ -46,6 +46,11 @@ float sdRoundBox(vec3 p, vec3 b, float r) {
   return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0) - r;
 }
 
+float sdRoundedCylinder(vec3 p, float ra, float rb, float h) {
+  vec2 d = vec2(length(p.xz) - ra + rb, abs(p.y) - h + rb);
+  return min(max(d.x, d.y), 0.0) + length(max(d, 0.0)) - rb;
+}
+
 // NORMAL
 vec3 calculate_normal(in vec3 p) {
   const vec3 eps = vec3(0.001, 0.0, 0.0);
@@ -82,8 +87,8 @@ vec2 smin(float a, float b, float k) {
 // CHECKERED COLOR
 vec3 get_checkered_color(in vec3 pos, float scale) {
   float checker = mod(floor(pos.x * scale) + floor(pos.z * scale), 2.0);
-  vec3 dark = rgb(255, 160, 180);
-  vec3 light = rgb(255, 200, 210);
+  vec3 dark = vec3(0.1);
+  vec3 light = vec3(9.0);
 
   return mix(dark, light, checker);
 }
@@ -115,15 +120,9 @@ vec3 rotateXYZ(vec3 p, vec3 angles) {
 
 // MAP
 vec3 get_color(float id, in vec3 pos) {
-
-  // rect 1
-  if (id == 1.0) {
-    return vec3(0.05);
-  }
-
-  // sphere 2
-  if (id == 2.0) {
-    return vec3(0, 0, 1.0);
+  // sphere 1
+  if (id == 1) {
+    return rgb(255, 0, 0);
   }
 
   // floor 3
@@ -137,13 +136,8 @@ vec3 get_color(float id, in vec3 pos) {
 
 float map(in vec3 pos, out vec3 color) {
 
-  // rect 1
-  vec3 p1 = pos - vec3(0, .25, -2.25);
-  float d1 = sdRoundBox(p1, vec3(1, 1.25, 1), .1);
-
-  vec3 p_temp = pos - vec3(0, .25, -1.2);
-  float d_temp = sdRoundBox(p_temp, vec3(.85, 1.1, .2), 0.05);
-  d1 = max(d1, -d_temp);
+  // sphere 1
+  float d1 = sdfSphere(pos, vec3(0, 0, -2), 1);
   vec3 c1 = get_color(1, pos);
 
   // floor 3
@@ -154,7 +148,7 @@ float map(in vec3 pos, out vec3 color) {
   float dist = floor;
   color = c_floor;
 
-  // box 1
+  // sphere
   if (d1 < dist) {
     dist = d1;
     color = c1;
@@ -170,7 +164,8 @@ float map(vec3 pos) {
 }
 
 // RAY MARCHER
-vec3 march_ray(in vec3 ro, in vec3 rd) {
+// returns color + t (distance)
+vec4 march_ray(in vec3 ro, in vec3 rd) {
   // total distance travelled
   float t = 0.0;
   const float NUM_MAX_STEPS = 512;
@@ -228,7 +223,9 @@ vec3 march_ray(in vec3 ro, in vec3 rd) {
       vec3 color =
           object_color * (ambient_color + diffuse_color) + specular_color;
 
-      return color;
+      // color = color * exp(-0.2 * t);
+
+      return vec4(color, t);
     }
 
     if (t > MAX_TRACE_DISTANCE) {
@@ -240,11 +237,12 @@ vec3 march_ray(in vec3 ro, in vec3 rd) {
   }
 
   // background color
-  // vec3 bg1 = vec3(1.0, 1.0, 1.0);
-  // vec3 bg2 = vec3(0.2, 0.4, 0.8);
-  vec3 bg1 = rgb(255, 218, 185);
-  vec3 bg2 = rgb(255, 105, 180);
-  return mix(bg1, bg2, rd.y);
+  vec3 bg1 = vec3(1.0, 1.0, 1.0);
+  vec3 bg2 = vec3(0.2, 0.4, 0.8);
+  // vec3 bg1 = rgb(255, 218, 185);
+  // vec3 bg2 = rgb(255, 105, 180);
+  vec3 bg = mix(bg1, bg2, rd.y);
+  return vec4(bg, t);
 }
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord) {
@@ -260,15 +258,26 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
   mouse *= vec2(AR, -1);
 
   // camera setup
-  vec3 camera_position = vec3(0 * sin(iTime * 0.15), 0, 2);
+  vec3 camera_position = vec3(2 * sin(iTime), 0, 25 * abs(sin(0.5 * iTime)));
   vec3 ro = camera_position;
   float fov = radians(60.0);
   vec3 rd = normalize(vec3(uv * tan(fov * 0.5), -1.0));
 
-  vec4 color = vec4(march_ray(ro, rd), 1.0);
+  vec4 result = march_ray(ro, rd);
+  vec3 color = result.xyz;
+  float t = result.w;
+
+  // distance fog
+  float fog_density = 0.01;
+  float fog_near = 10.0; // start fading at distance
+  float fog_far = 20.0;  // completely faded by this distance
+  float fog_amount = smoothstep(fog_near, fog_far, t);
+  vec3 fog_color = rgb(255, 215, 230);
+
+  color = mix(color, fog_color, fog_amount);
 
   // gamma correction
-  color = pow(color, vec4(1.0 / 2.2));
+  color = pow(color, vec3(1.0 / 2.2));
 
   fragColor = vec4(color.xyz, 1.0);
 }

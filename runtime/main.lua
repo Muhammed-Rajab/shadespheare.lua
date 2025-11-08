@@ -27,4 +27,4 @@ shader = shader or "ray-marching.glsl" -- fallback
 ---WARN: turn on when development
 -- print("LOADED SHADER:", shader, "WATCH:", watch, "DELAY:", delay, "FPS:", show_fps)
 
-require("runtime.src.init")(shader, watch, delay, show_fps)
+require("runtime.src.init")(shader, watch, delay, show_fps, "./runtime/moon.lua")

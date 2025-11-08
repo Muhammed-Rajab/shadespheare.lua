@@ -2,7 +2,8 @@
 ---@param watch boolean?
 ---@param reload_delay number?
 ---@param show_fps boolean?
-local function initialize(shader_path, watch, reload_delay, show_fps)
+---@param config_path string
+local function initialize(shader_path, watch, reload_delay, show_fps, config_path)
 	---logical window dimensions
 	WIDTH = nil
 	HEIGHT = nil
@@ -13,17 +14,17 @@ local function initialize(shader_path, watch, reload_delay, show_fps)
 	local utils = require("runtime.src.utils")
 
 	local LiveShader = require("runtime.src.live-shader")
+	local LiveConfig = require("runtime.src.live-config")
 
 	---@type LiveShader
 	local shader
 
+	---@type LiveConfig
+	local config
+
 	---a few uniforms to set to shader that needs caching
 	local resolution = { width = 0, height = 0 }
 	local mouse = { x = 0, y = 0, click_x = 0, click_y = 0, dx = 0, dy = 0 }
-
-	---WARN: test texture
-	local my_texture
-	local my_bg
 
 	function love.load()
 		---window setup
@@ -45,8 +46,7 @@ local function initialize(shader_path, watch, reload_delay, show_fps)
 		mouse.x = resolution.width / 2
 		mouse.y = resolution.height / 2
 
-		---check for shader file existence
-		local function shader_exists(path)
+		local function file_exists(path)
 			local info = love.filesystem.getInfo(path)
 			if info then
 				return true
@@ -59,8 +59,16 @@ local function initialize(shader_path, watch, reload_delay, show_fps)
 			return false
 		end
 
-		if not shader_exists(shader_path) then
+		---check for shader file existence
+		if not file_exists(shader_path) then
 			print(("[%s] ❌ shader file not found: %s"):format(os.date("%H:%M:%S"), shader_path))
+			love.event.quit(1)
+			return
+		end
+
+		---check for config file existence
+		if not file_exists(config_path) then
+			print(("[%s] ❌ config file not found: %s"):format(os.date("%H:%M:%S"), config_path))
 			love.event.quit(1)
 			return
 		end
@@ -69,6 +77,12 @@ local function initialize(shader_path, watch, reload_delay, show_fps)
 		shader = LiveShader.new(shader_path, reload_delay == nil and 0.25 or reload_delay)
 		shader:set_watch(watch ~= false)
 		shader:update(0)
+
+		config = LiveConfig.new(config_path, reload_delay == nil and 0.25 or reload_delay)
+		config:set_watch(watch ~= false)
+		config:update(0)
+
+		print(utils.dump(config, 2))
 	end
 
 	---update resolution when window size changes
@@ -93,6 +107,7 @@ local function initialize(shader_path, watch, reload_delay, show_fps)
 
 	function love.update(dt)
 		shader:update(dt)
+		config:update(dt)
 
 		if not shader:loaded() then
 			return

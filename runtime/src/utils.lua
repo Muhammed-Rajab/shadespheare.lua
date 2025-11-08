@@ -57,4 +57,29 @@ function utils.loadDefaultFonts()
 	fontman:set("jbmono-regular", 32)
 end
 
+---@param o table
+---@param indent  number
+---@return string
+function utils.dump(o, indent)
+	indent = indent or 2
+	local spacing = string.rep("  ", indent)
+
+	if type(o) ~= "table" then
+		return tostring(o)
+	end
+
+	local result = "{\n"
+	for k, v in pairs(o) do
+		local formattedKey = "[" .. tostring(k) .. "]"
+		result = result .. spacing .. "  " .. formattedKey .. " = "
+		if type(v) == "table" then
+			result = result .. utils.dump(v, indent + 1) .. ",\n"
+		else
+			result = result .. tostring(v) .. ",\n"
+		end
+	end
+	result = result .. spacing .. "}"
+	return result
+end
+
 return utils

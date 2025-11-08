@@ -183,10 +183,19 @@ function LiveConfig:set_watch(enabled)
 	print(string.format("[%s] %s live config watch %s", os.date("%H:%M:%S"), emoji, state))
 end
 
----returns whether the live shader is watching
+---returns whether the live config is watching
 ---@return boolean
 function LiveConfig:is_watching()
 	return self._watch_enabled
 end
+
+---returns whether the config is loaded
+---@return boolean
+function LiveConfig:loaded()
+	return self._config ~= nil
+end
+
+---@param shader LiveShader
+function LiveConfig:apply(shader) end
 
 return LiveConfig

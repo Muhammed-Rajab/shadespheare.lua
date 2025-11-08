@@ -81,8 +81,6 @@ local function initialize(shader_path, watch, reload_delay, show_fps, config_pat
 		config = LiveConfig.new(config_path, reload_delay == nil and 0.25 or reload_delay)
 		config:set_watch(watch ~= false)
 		config:update(0)
-
-		print(utils.dump(config, 2))
 	end
 
 	---update resolution when window size changes
@@ -109,18 +107,16 @@ local function initialize(shader_path, watch, reload_delay, show_fps, config_pat
 		shader:update(dt)
 		config:update(dt)
 
-		if not shader:loaded() then
-			return
+		if shader:loaded() then
+			--- NOTE: these methods return error, but most of them are "uniform not found" errors
+			--- caused by shader code optimisation, when those uniforms are left unused.
+			--- these can be ignored
+			shader:set_uniform("iTime", love.timer.getTime())
+			-- WARN: 2.0 is pixel ratio, which must be added later.
+			shader:set_uniform("iResolution", { resolution.width, resolution.height, 2.0 })
+			shader:set_uniform("iMouse", { mouse.x, mouse.y, mouse.click_x, mouse.click_y })
+			shader:set_uniform("iDelta", { mouse.dx, mouse.dy })
 		end
-
-		--- NOTE: these methods return error, but most of them are "uniform not found" errors
-		--- caused by shader code optimisation, when those uniforms are left unused.
-		--- these can be ignored
-		shader:set_uniform("iTime", love.timer.getTime())
-		-- WARN: 2.0 is pixel ratio, which must be added later.
-		shader:set_uniform("iResolution", { resolution.width, resolution.height, 2.0 })
-		shader:set_uniform("iMouse", { mouse.x, mouse.y, mouse.click_x, mouse.click_y })
-		shader:set_uniform("iDelta", { mouse.dx, mouse.dy })
 	end
 
 	function love.draw()

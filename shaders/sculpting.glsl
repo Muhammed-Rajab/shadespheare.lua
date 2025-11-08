@@ -138,12 +138,11 @@ vec3 get_color(float id, in vec3 pos) {
 float map(in vec3 pos, out vec3 color) {
 
   // rect 1
-  // vec3 p1 = pos - vec3(-1.5, sin(iTime), -2.5);
   vec3 p1 = pos - vec3(0, .25, -2.25);
   float d1 = sdRoundBox(p1, vec3(1, 1.25, 1), .1);
 
   vec3 p_temp = pos - vec3(0, .25, -1.2);
-  float d_temp = sdRoundBox(p_temp, vec3(.85, 1.05, .2), 0.05);
+  float d_temp = sdRoundBox(p_temp, vec3(.85, 1.1, .2), 0.05);
   d1 = max(d1, -d_temp);
   vec3 c1 = get_color(1, pos);
 

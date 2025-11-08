@@ -50,6 +50,24 @@ vec3 calculate_normal(in vec3 p) {
   return normalize(vec3(dx, dy, dz));
 }
 
+// SHADOW
+float soft_shadow(in vec3 ro, in vec3 rd, float mint, float maxt, float w) {
+  float res = 1.0;
+  float ph = 1e20;
+  float t = mint;
+  for (int i = 0; i < 256 && t < maxt; i++) {
+    float h = map(ro + rd * t).x;
+    if (h < 0.001)
+      return 0.0;
+    float y = h * h / (2.0 * ph);
+    float d = sqrt(h * h - y * y);
+    res = min(res, d / (w * max(0.0, t - y)));
+    ph = h;
+    t += h;
+  }
+  return res;
+}
+
 // MAP
 vec3 get_color(float id) {
 

@@ -39,6 +39,11 @@ float sdfPlane(in vec3 p, in vec3 n, float h) {
   return dot(p, n) + h;
 }
 
+float sdRoundBox(vec3 p, vec3 b, float r) {
+  vec3 q = abs(p) - b + r;
+  return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0) - r;
+}
+
 // NORMAL
 vec3 calculate_normal(in vec3 p) {
   const vec3 eps = vec3(0.001, 0.0, 0.0);
@@ -72,7 +77,7 @@ vec3 get_color(float id) {
     return vec3(1.0, 0, 0);
   }
 
-  // sphere 1
+  // rect 1
   if (id == 1.0) {
     return vec3(0, 1.0, 0);
   }
@@ -94,13 +99,13 @@ vec3 get_color(float id) {
 vec2 map(in vec3 pos) {
 
   // sphere 0
-  float d0 = sdfSphere(pos, vec3(0, 0, -2), 1.0);
+  float d0 = sdfSphere(pos, vec3(0, 0, -2), 0.75);
 
-  // sphere 1
-  float d1 = sdfSphere(pos, vec3(-1.25, 0, -2), .75);
+  // rect 1
+  float d1 = sdRoundBox(pos - vec3(-1.85, 0, -2.5), vec3(1, 0.75, 0.75), .05);
 
   // sphere 2
-  float d2 = sdfSphere(pos, vec3(1.25, 0, -2), .75);
+  float d2 = sdfSphere(pos, vec3(1.5, 0, -2), .75);
 
   // floor 3
   float d3 = sdfPlane(pos, vec3(0, 1, 0), 1);
@@ -150,7 +155,7 @@ vec3 march_ray(in vec3 ro, in vec3 rd) {
 
       vec3 object_color = get_color(object_id);
 
-      vec3 light_pos = vec3(cos(-iTime * 4.0), sin(-iTime * 4.0) + 1, 0);
+      vec3 light_pos = vec3(cos(-iTime * 4.0), 0, 0);
       // vec3 light_pos = vec3(0, 1, 0);
       vec3 light_dir = normalize(light_pos - curr_pos);
       // vec3 light_color = vec3(1.0, 0.8, 0.6);
@@ -220,7 +225,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
   mouse *= vec2(AR, -1);
 
   // camera setup
-  vec3 camera_position = vec3(1 * sin(iTime * 0.4), 0, 2);
+  vec3 camera_position = vec3(0 * sin(iTime * 0.15), 0, 2);
   vec3 ro = camera_position;
   float fov = radians(60.0);
   vec3 rd = normalize(vec3(uv * tan(fov * 0.5), -1.0));

@@ -99,6 +99,7 @@ end
 ---@field _reload_timer     number    keeps track of time before reloading
 ---@field _compile_error    string    errors that occured while compilation
 ---@field _watch_enabled    boolean   whether watching is enabled
+---@field _on_reload        nil | fun(): nil  call back function when reloaded
 local LiveShader = {}
 
 LiveShader.__index = LiveShader
@@ -120,6 +121,8 @@ function LiveShader.new(path, reload_delay)
 
 		_compile_error = nil,
 		_watch_enabled = true,
+
+		_on_reload = nil,
 	}
 
 	setmetatable(obj, LiveShader)
@@ -200,6 +203,11 @@ function LiveShader:_reload()
 
 		self._compile_error = _err_msg_screen
 	end
+
+	---TODO: call the callback after reload
+	if self._on_reload then
+		self._on_reload()
+	end
 end
 
 ---checks whether the shader has a uniform
@@ -276,6 +284,11 @@ end
 ---@return boolean
 function LiveShader:is_watching()
 	return self._watch_enabled
+end
+
+---@param fn fun(): nil
+function LiveShader:set_on_reload(fn)
+	self._on_reload = fn
 end
 
 return LiveShader

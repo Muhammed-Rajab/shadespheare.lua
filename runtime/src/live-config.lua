@@ -80,6 +80,7 @@ end
 ---@field _pending_reload   boolean   whether a reload is pending
 ---@field _reload_timer     number    keeps track of time before reloading
 ---@field _watch_enabled    boolean   whether watching is enabled
+---@field _on_reload        nil | fun(): nil  call back function when reloaded
 local LiveConfig = {}
 
 LiveConfig.__index = LiveConfig
@@ -100,6 +101,8 @@ function LiveConfig.new(path, reload_delay)
 		_reload_delay = reload_delay or 0.25,
 
 		_watch_enabled = true,
+
+		_on_reload = nil,
 	}
 
 	setmetatable(obj, LiveConfig)
@@ -149,11 +152,12 @@ end
 function LiveConfig:_reload()
 	self._pending_reload = false
 
-	-- Remove from Lua module cache so require() loads fresh file
-	local modName = self._config_path:gsub("/", "."):gsub("%.lua$", "")
-	package.loaded[modName] = nil
+	---WARN: we'll be using dofile
+	-- -- Remove from Lua module cache so require() loads fresh file
+	-- local modName = self._config_path:gsub("/", "."):gsub("%.lua$", "")
+	-- package.loaded[modName] = nil
 
-	local ok, cfg = pcall(require, modName)
+	local ok, cfg = pcall(dofile, self._config_path)
 
 	local _time_prefix = "[" .. os.date("%H:%M:%S") .. "] "
 
@@ -171,6 +175,11 @@ function LiveConfig:_reload()
 			.. colorize("config error: \n" .. tostring(cfg), 31)
 
 		io.write(_err_msg_cli)
+	end
+
+	---TODO: call the callback after reload
+	if self._on_reload then
+		self._on_reload()
 	end
 end
 
@@ -197,5 +206,10 @@ end
 
 ---@param shader LiveShader
 function LiveConfig:apply(shader) end
+
+---@param fn fun(): nil
+function LiveConfig:set_on_reload(fn)
+	self._on_reload = fn
+end
 
 return LiveConfig

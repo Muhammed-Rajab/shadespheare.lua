@@ -81,6 +81,7 @@ end
 ---@field _reload_timer     number    keeps track of time before reloading
 ---@field _watch_enabled    boolean   whether watching is enabled
 ---@field _on_reload        nil | fun(): nil  call back function when reloaded
+---@field _cached_textures  table<string, love.Image> cached images for textures
 local LiveConfig = {}
 
 LiveConfig.__index = LiveConfig
@@ -213,15 +214,26 @@ function LiveConfig:apply(shader)
 	local uniforms = self._config.uniforms
 	local textures = self._config.textures
 
+	-- Cache textures on first load
+	if not self._config._cached_textures then
+		self._config._cached_textures = {}
+		if self._config.textures then
+			for k, v in pairs(self._config.textures) do
+				self._config._cached_textures[k] = love.graphics.newImage(v.path)
+			end
+		end
+	end
+
 	if uniforms then
 		for k, v in pairs(uniforms) do
 			shader:set_uniform(k, v)
 		end
 	end
 
-	if textures then
-		for k, v in pairs(textures) do
-			shader:set_uniform(k, love.graphics.newImage(v.path))
+	-- Apply textures
+	if self._config._cached_textures then
+		for k, img in pairs(self._config._cached_textures) do
+			shader:set_uniform(k, img)
 		end
 	end
 end

@@ -188,7 +188,7 @@ float map(vec3 pos) {
 vec4 march_ray(in vec3 ro, in vec3 rd) {
   // total distance travelled
   float t = 0.0;
-  const float NUM_MAX_STEPS = 512;
+  const float NUM_MAX_STEPS = 256;
   const float MIN_HIT_DISTANCE = 0.001;
   const float MAX_TRACE_DISTANCE = 100.0;
 

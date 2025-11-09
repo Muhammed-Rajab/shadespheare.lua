@@ -1,9 +1,8 @@
 ---@param shader_path string
 ---@param watch boolean?
 ---@param reload_delay number?
----@param show_fps boolean?
 ---@param config_path string
-local function initialize(shader_path, watch, reload_delay, show_fps, config_path)
+local function initialize(shader_path, watch, reload_delay, config_path)
 	---logical window dimensions
 	WIDTH = nil
 	HEIGHT = nil
@@ -25,6 +24,9 @@ local function initialize(shader_path, watch, reload_delay, show_fps, config_pat
 	---a few uniforms to set to shader that needs caching
 	local resolution = { width = 0, height = 0 }
 	local mouse = { x = 0, y = 0, click_x = 0, click_y = 0, dx = 0, dy = 0 }
+
+	---WARN: setup ui config
+	local ui_config = {}
 
 	function love.load()
 		---window setup
@@ -80,19 +82,16 @@ local function initialize(shader_path, watch, reload_delay, show_fps, config_pat
 
 		config = LiveConfig.new(config_path, reload_delay == nil and 0.25 or reload_delay)
 		config:set_watch(watch ~= false)
-		config:update(0)
 
 		-- When config reloads, reload shader
 		config:set_on_reload(function()
 			shader:update(0) -- triggers immediate reload
 
 			--- update ui configs
-			local ui = config._config.ui
-
-			if ui then
-				show_fps = ui.show_fps
-			end
+			ui_config = config._config.ui or {}
 		end)
+
+		config:update(0)
 
 		-- When shader reloads, reapply config
 		shader:set_on_reload(function()
@@ -163,7 +162,7 @@ local function initialize(shader_path, watch, reload_delay, show_fps, config_pat
 			shader:show_errors()
 		---else render the fps
 		else
-			if show_fps then
+			if ui_config.show_fps then
 				love.graphics.setColor(0, 0, 0, 255)
 				love.graphics.rectangle("fill", 7, 10, 157, 40)
 				love.graphics.setColor(0, 255, 0, 255)

@@ -89,6 +89,9 @@ local function initialize(shader_path, watch, reload_delay, config_path)
 
 			--- update ui configs
 			ui_config = config._config.ui or {}
+
+			-- print the table
+			utils.dump(config, 2)
 		end)
 
 		config:update(0)

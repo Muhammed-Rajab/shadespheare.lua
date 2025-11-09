@@ -1,4 +1,5 @@
-local shader = nil
+local shader = "" -- default
+local config_path = "" -- default
 local watch = false
 local delay = 0.25
 
@@ -8,20 +9,17 @@ table.remove(arg, 1)
 for i = 1, #arg do
 	local a = arg[i]
 
-	-- First non-flag argument is shader file
-	if not shader and not a:match("^%-") then
-		shader = a
+	if a:match("^%-%-shader=") then
+		shader = a:match("^%-%-shader=(.*)")
+	elseif a:match("^%-%-config=") then
+		config_path = a:match("^%-%-config=(.*)")
 	elseif a == "--watch" then
 		watch = true
 	elseif a:match("^%-%-delay=") then
 		delay = tonumber(a:match("^%-%-delay=(.*)")) or delay
+	elseif a == "--no-fps" then
+		show_fps = false
 	end
 end
 
----WARN: add a better fallback
-shader = shader or "ray-marching.glsl" -- fallback
-
----WARN: turn on when development
--- print("LOADED SHADER:", shader, "WATCH:", watch, "DELAY:", delay, "FPS:", show_fps)
-
-require("runtime.src.init")(shader, watch, delay, "./runtime/moon.lua")
+require("runtime.src.init")(shader, watch, delay, config_path)

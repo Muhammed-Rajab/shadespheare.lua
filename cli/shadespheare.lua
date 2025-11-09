@@ -31,6 +31,7 @@ parser:flag("-v --verbose", "enable verbose output")
 
 local run_cmd = parser:command("run", "run a shader in a LÖVE2D window")
 run_cmd:argument("shader", "path to shader file"):args(1)
+run_cmd:option("--config", "path to shader config file"):args(1):count(1)
 
 local new_cmd = parser:command("new", "create a new shader project")
 new_cmd:argument("shader", "path to new shader project")
@@ -38,6 +39,7 @@ new_cmd:argument("shader", "path to new shader project")
 local watch_cmd = parser:command("watch", "continuously re-run the shader when the file changes")
 watch_cmd:argument("shader", "path to shader file"):args(1)
 watch_cmd:option("--delay", "shader reload delay", "0.25"):convert(tonumber)
+watch_cmd:option("--config", "path to shader config file"):args(1):count(1)
 
 local args = parser:parse()
 
@@ -96,13 +98,23 @@ end
 local function handle_run()
 	print(("[%s] 🏃 running %s"):format(os.date("%H:%M:%S"), args.shader))
 	local shader_abs_path = abspath(args.shader)
-	os.execute(string.format('love "%s" "%s"', "runtime", shader_abs_path))
+	local config_abs_path = abspath(args.config)
+	os.execute(string.format('love "%s" "%s" --config="%s"', "runtime", shader_abs_path, config_abs_path))
 end
 
 local function handle_watch()
 	print(("[%s] 👀 watching %s (reload delay %.2fs)"):format(os.date("%H:%M:%S"), args.shader, args.delay))
 	local shader_abs_path = abspath(args.shader)
-	os.execute(string.format('love "%s" "%s" --watch --delay=%s', "runtime", shader_abs_path, args.delay))
+	local config_abs_path = abspath(args.config)
+	os.execute(
+		string.format(
+			'love "%s" "%s" --watch --delay=%s --config="%s"',
+			"runtime",
+			shader_abs_path,
+			args.delay,
+			config_abs_path
+		)
+	)
 end
 
 ---handle the cli

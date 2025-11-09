@@ -214,12 +214,26 @@ function LiveConfig:apply(shader)
 	local uniforms = self._config.uniforms
 	local textures = self._config.textures
 
-	-- Cache textures on first load
-	if not self._config._cached_textures then
-		self._config._cached_textures = {}
-		if self._config.textures then
-			for k, v in pairs(self._config.textures) do
-				self._config._cached_textures[k] = love.graphics.newImage(v.path)
+	-- Cache textures in the LiveConfig instance
+	if not self._cached_textures then
+		self._cached_textures = {}
+	end
+
+	if textures then
+		for k, v in pairs(textures) do
+			-- Only load if not already cached
+			if not self._cached_textures[v.path] then
+				local ok, img = pcall(love.graphics.newImage, v.path)
+				if ok then
+					self._cached_textures[v.path] = img
+				else
+					print(("❌ failed to load texture %s: %s"):format(v.path, img))
+				end
+			end
+
+			-- Apply cached image
+			if self._cached_textures[v.path] then
+				shader:set_uniform(k, self._cached_textures[v.path])
 			end
 		end
 	end
@@ -227,13 +241,6 @@ function LiveConfig:apply(shader)
 	if uniforms then
 		for k, v in pairs(uniforms) do
 			shader:set_uniform(k, v)
-		end
-	end
-
-	-- Apply textures
-	if self._config._cached_textures then
-		for k, img in pairs(self._config._cached_textures) do
-			shader:set_uniform(k, img)
 		end
 	end
 end

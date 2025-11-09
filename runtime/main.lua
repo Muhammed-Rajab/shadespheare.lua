@@ -17,8 +17,6 @@ for i = 1, #arg do
 		watch = true
 	elseif a:match("^%-%-delay=") then
 		delay = tonumber(a:match("^%-%-delay=(.*)")) or delay
-	elseif a == "--no-fps" then
-		show_fps = false
 	end
 end
 

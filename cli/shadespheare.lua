@@ -99,16 +99,17 @@ local function handle_run()
 	print(("[%s] 🏃 running %s"):format(os.date("%H:%M:%S"), args.shader))
 	local shader_abs_path = abspath(args.shader)
 	local config_abs_path = abspath(args.config)
-	os.execute(string.format('love "%s" "%s" --config="%s"', "runtime", shader_abs_path, config_abs_path))
+	os.execute(string.format('love "%s" --shader="%s" --config="%s"', "runtime", shader_abs_path, config_abs_path))
 end
 
 local function handle_watch()
 	print(("[%s] 👀 watching %s (reload delay %.2fs)"):format(os.date("%H:%M:%S"), args.shader, args.delay))
 	local shader_abs_path = abspath(args.shader)
 	local config_abs_path = abspath(args.config)
+
 	os.execute(
 		string.format(
-			'love "%s" "%s" --watch --delay=%s --config="%s"',
+			'love "%s" --shader="%s" --watch --delay=%s --config="%s"',
 			"runtime",
 			shader_abs_path,
 			args.delay,

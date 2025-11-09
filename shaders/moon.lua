@@ -1,10 +1,10 @@
 return {
 	textures = {
 		myTexture = {
-			path = "moon_texture.jpg",
+			path = "./runtime/moon_texture.jpg",
 		},
 		myBG = {
-			path = "stars.jpg",
+			path = "./runtime/stars.jpg",
 		},
 	},
 	uniforms = {},

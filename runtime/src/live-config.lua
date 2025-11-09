@@ -21,6 +21,28 @@ local function safe_read(path)
 	return content
 end
 
+-- Load an image from an external path (outside Love2D project)
+function load_external_image(path)
+	-- Open file in binary mode
+	local file = io.open(path, "rb")
+	if not file then
+		error("Failed to open file: " .. path)
+	end
+
+	-- Read all bytes
+	local data = file:read("*all")
+	file:close()
+
+	-- Convert to Love2D FileData
+	local fileData = love.filesystem.newFileData(data, path:match("[^/\\]+$")) -- use filename only
+
+	-- Convert to ImageData
+	local imageData = love.image.newImageData(fileData)
+
+	-- Create a drawable Image
+	return love.graphics.newImage(imageData)
+end
+
 ---get modification time of a file, works for both love fs and OS paths
 ---@param path string
 ---@return number|nil
@@ -223,7 +245,7 @@ function LiveConfig:apply(shader)
 		for k, v in pairs(textures) do
 			-- Only load if not already cached
 			if not self._cached_textures[v.path] then
-				local ok, img = pcall(love.graphics.newImage, v.path)
+				local ok, img = pcall(load_external_image, v.path)
 				if ok then
 					self._cached_textures[v.path] = img
 				else

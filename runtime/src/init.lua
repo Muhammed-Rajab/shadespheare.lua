@@ -88,7 +88,9 @@ local function initialize(shader_path, watch, reload_delay, config_path)
 			shader:update(0) -- triggers immediate reload
 
 			--- update ui configs
-			ui_config = config._config.ui or {}
+			if config:loaded() then
+				ui_config = config._config.ui or {}
+			end
 
 			-- print the table
 			utils.dump(config, 2)

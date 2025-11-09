@@ -1,6 +1,6 @@
-local shader = "" -- default
-local config_path = "" -- default
-local watch = false
+local shader = "default/shader.glsl" -- defaultmain
+local config_path = "default/shader.lua" -- default
+local watch = true
 local delay = 0.25
 
 ---removes "runtime" from `love runtime`

@@ -106,7 +106,6 @@ local function handle_watch()
 	print(("[%s] 👀 watching %s (reload delay %.2fs)"):format(os.date("%H:%M:%S"), args.shader, args.delay))
 	local shader_abs_path = abspath(args.shader)
 	local config_abs_path = abspath(args.config)
-
 	os.execute(
 		string.format(
 			'love "%s" --shader="%s" --watch --delay=%s --config="%s"',

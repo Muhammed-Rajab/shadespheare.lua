@@ -205,7 +205,26 @@ function LiveConfig:loaded()
 end
 
 ---@param shader LiveShader
-function LiveConfig:apply(shader) end
+function LiveConfig:apply(shader)
+	if not self._config or not shader:loaded() then
+		return
+	end
+
+	local uniforms = self._config.uniforms
+	local textures = self._config.textures
+
+	if uniforms then
+		for k, v in pairs(uniforms) do
+			shader:set_uniform(k, v)
+		end
+	end
+
+	if textures then
+		for k, v in pairs(textures) do
+			shader:set_uniform(k, love.graphics.newImage(v.path))
+		end
+	end
+end
 
 ---@param fn fun(): nil
 function LiveConfig:set_on_reload(fn)

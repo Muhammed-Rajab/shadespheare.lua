@@ -81,6 +81,25 @@ local function initialize(shader_path, watch, reload_delay, show_fps, config_pat
 		config = LiveConfig.new(config_path, reload_delay == nil and 0.25 or reload_delay)
 		config:set_watch(watch ~= false)
 		config:update(0)
+
+		-- When config reloads, reload shader
+		config:set_on_reload(function()
+			shader:update(0) -- triggers immediate reload
+
+			--- update ui configs
+			local ui = config._config.ui
+
+			if ui then
+				show_fps = ui.show_fps
+			end
+		end)
+
+		-- When shader reloads, reapply config
+		shader:set_on_reload(function()
+			if config:loaded() then
+				config:apply(shader)
+			end
+		end)
 	end
 
 	---update resolution when window size changes
@@ -116,6 +135,11 @@ local function initialize(shader_path, watch, reload_delay, show_fps, config_pat
 			shader:set_uniform("iResolution", { resolution.width, resolution.height, 2.0 })
 			shader:set_uniform("iMouse", { mouse.x, mouse.y, mouse.click_x, mouse.click_y })
 			shader:set_uniform("iDelta", { mouse.dx, mouse.dy })
+
+			-- Apply config uniforms and textures
+			if config:loaded() then
+				config:apply(shader)
+			end
 		end
 	end
 
